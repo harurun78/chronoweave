@@ -216,12 +216,12 @@ Phase 1 を完了とするための品質ゲートを定義する。
 
 2026-05-30 / Chromium in dev container:
 
-| Area | Budget | Validation |
-|---|---:|---|
-| YAML export | <= 300ms | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-export-yaml` measure |
-| YAML import | <= 300ms | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-import` measure |
-| WCET drag | <= 100ms representative interaction | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-wcet-drag` measure |
-| ProjectState commit-to-redraw | <= 100ms | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-project-state-commit-to-redraw` measure |
+| Area                          |                              Budget | Validation                                                                                        |
+| ----------------------------- | ----------------------------------: | ------------------------------------------------------------------------------------------------- |
+| YAML export                   |                            <= 300ms | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-export-yaml` measure                    |
+| YAML import                   |                            <= 300ms | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-import` measure                         |
+| WCET drag                     | <= 100ms representative interaction | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-wcet-drag` measure                      |
+| ProjectState commit-to-redraw |                            <= 100ms | Enforced by `test/e2e/app-shell.spec.ts` via `chronoweave-project-state-commit-to-redraw` measure |
 
 No Phase 1 performance remediation is required for the current representative scenario. Phase 1 scope was reviewed and remains limited to periodic task input, approximate non-iterative RTA, ProjectFile import/export, and UI analysis feedback; code generation, trace import, non-periodic task modeling, and full schedulability proof remain out of scope.
 
