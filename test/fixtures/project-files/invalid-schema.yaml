@@ -1,4 +1,4 @@
-version: "0.1"
+version: '0.1'
 global:
   tick_ms: 0
   stack_presets:

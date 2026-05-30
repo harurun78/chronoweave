@@ -1,4 +1,4 @@
-version: "0.1"
+version: '0.1'
 global:
   tick_ms: 1
   stack_presets:
@@ -28,4 +28,4 @@ tasks:
     deadline_ms: 20
     priority_mode: auto
     stack: mid
-    description: "IMU + encoder fusion"
+    description: 'IMU + encoder fusion'
