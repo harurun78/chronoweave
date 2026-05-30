@@ -1,0 +1,42 @@
+{
+  "version": "0.1",
+  "global": {
+    "tick_ms": 1,
+    "stack_presets": {
+      "low": 512,
+      "mid": 2048,
+      "high": 4096
+    },
+    "ram_capacity": 65536
+  },
+  "tasks": [
+    {
+      "id": "isr-timer",
+      "name": "ISR_Timer",
+      "period_ms": 1,
+      "wcet_ms": 0.05,
+      "deadline_ms": 1,
+      "priority_mode": "auto",
+      "stack": "low"
+    },
+    {
+      "id": "motorctrl-x",
+      "name": "MotorCtrl_X",
+      "period_ms": 10,
+      "wcet_ms": 3,
+      "deadline_ms": 10,
+      "priority_mode": "auto",
+      "stack": "mid"
+    },
+    {
+      "id": "sensor-fusion",
+      "name": "SensorFusion",
+      "period_ms": 20,
+      "wcet_ms": 6,
+      "deadline_ms": 20,
+      "priority_mode": "auto",
+      "stack": "mid",
+      "description": "IMU + encoder fusion"
+    }
+  ]
+}

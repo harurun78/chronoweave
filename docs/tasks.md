@@ -13,12 +13,12 @@
 
 ## Phase 2: ProjectFile Schema And Fixtures
 
-- [ ] T005 Define ProjectFile, GlobalSettings, TaskModel, ProjectState, AnalysisSnapshot, MemoryProfile, and Problem TypeScript types
-- [ ] T006 Implement ProjectFile v0.1 schema validation matching [contracts/project-file.schema.json](contracts/project-file.schema.json)
-- [ ] T007 Implement ProjectFile normalization for default `deadline_ms` and `priority_mode`
-- [ ] T008 Add Motor Control 1-axis YAML fixture with `ISR_Timer`, `MotorCtrl_X`, and `SensorFusion`
-- [ ] T009 Add invalid schema, LCM warning, high-utilization optimistic-bias, and memory warning fixtures
-- [ ] T010 Add schema and normalization unit tests for YAML and JSON
+- [x] T005 Define ProjectFile, GlobalSettings, TaskModel, ProjectState, AnalysisSnapshot, MemoryProfile, and Problem TypeScript types
+- [x] T006 Implement ProjectFile v0.1 schema validation matching [contracts/project-file.schema.json](contracts/project-file.schema.json)
+- [x] T007 Implement ProjectFile normalization for default `deadline_ms` and `priority_mode`
+- [x] T008 Add Motor Control 1-axis YAML fixture with `ISR_Timer`, `MotorCtrl_X`, and `SensorFusion`
+- [x] T009 Add invalid schema, LCM warning, high-utilization optimistic-bias, and memory warning fixtures
+- [x] T010 Add schema and normalization unit tests for YAML and JSON
 
 ## Phase 3: Analysis Kernel
 

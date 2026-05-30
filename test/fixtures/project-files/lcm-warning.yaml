@@ -1,0 +1,18 @@
+version: "0.1"
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+tasks:
+  - id: slow-a
+    name: SlowA
+    period_ms: 127
+    wcet_ms: 2
+    stack: low
+  - id: slow-b
+    name: SlowB
+    period_ms: 131
+    wcet_ms: 2
+    stack: mid

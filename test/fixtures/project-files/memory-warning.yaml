@@ -1,0 +1,19 @@
+version: "0.1"
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 4096
+    high: 8192
+  ram_capacity: 6000
+tasks:
+  - id: memory-heavy-a
+    name: MemoryHeavyA
+    period_ms: 10
+    wcet_ms: 1
+    stack: high
+  - id: memory-heavy-b
+    name: MemoryHeavyB
+    period_ms: 20
+    wcet_ms: 2
+    stack: high
