@@ -1,0 +1,34 @@
+project:
+  name: chronoweave
+  mode: speckit
+  exportProfile: speckit-react-vite
+  verify_command: npm run lint && npm run type-check && npm run test:run && npm run test:e2e && npm run build
+
+components:
+  - name: frontend
+    type: nodejs
+    framework: react-vite
+    path: src
+    testPath: test
+    commands:
+      install: npm install
+      lint: npm run lint
+      typecheck: npm run type-check
+      test: npm run test:run
+      e2e: npm run test:e2e
+      build: npm run build
+
+speckit:
+  continueInExport: true
+  promoteToRoot: true
+  copy:
+    - .specify/
+    - .devcontainer/
+    - specs/
+
+devcontainer:
+  enabled: true
+  base: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
+  features:
+    - ghcr.io/devcontainers/features/github-cli:1
+  postCreateCommand: npm install

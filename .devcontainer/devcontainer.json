@@ -1,0 +1,44 @@
+{
+    "name": "chronoweave",
+    "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+    "features": {
+        "ghcr.io/devcontainers-extra/features/apt-packages": {
+            "packages": "ripgrep,fzf"
+        },
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "moby": false
+        }
+    },
+    "postCreateCommand": "if [ -f package.json ]; then npm install; else echo 'package.json is not generated yet; skipping npm install.'; fi",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "vitest.explorer",
+                "ms-playwright.playwright",
+                "GitHub.copilot",
+                "GitHub.copilot-chat"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "typescript.tsdk": "node_modules/typescript/lib"
+            }
+        }
+    },
+    "forwardPorts": [
+        5173
+    ],
+    "portsAttributes": {
+        "5173": {
+            "label": "Vite dev server",
+            "onAutoForward": "notify"
+        }
+    }
+}

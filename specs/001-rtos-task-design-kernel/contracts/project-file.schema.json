@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronoweave.dev/schemas/project-file-0.1.json",
+  "title": "Chronoweave ProjectFile v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "global", "tasks"],
+  "properties": {
+    "version": {
+      "const": "0.1"
+    },
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tick_ms", "stack_presets"],
+      "properties": {
+        "tick_ms": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "stack_presets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["low", "mid", "high"],
+          "properties": {
+            "low": { "type": "integer", "exclusiveMinimum": 0 },
+            "mid": { "type": "integer", "exclusiveMinimum": 0 },
+            "high": { "type": "integer", "exclusiveMinimum": 0 }
+          }
+        },
+        "ram_capacity": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "period_ms", "wcet_ms", "stack"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "period_ms": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "wcet_ms": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "deadline_ms": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "priority_mode": {
+            "enum": ["auto", "manual"]
+          },
+          "manual_priority": {
+            "type": "integer"
+          },
+          "stack": {
+            "enum": ["low", "mid", "high"]
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "priority_mode": { "const": "manual" } },
+              "required": ["priority_mode"]
+            },
+            "then": {
+              "required": ["manual_priority"]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
