@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronoweave.local/schemas/project-file-v0.2.schema.json",
+  "title": "Chronoweave ProjectFile v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "global", "tasks"],
+  "properties": {
+    "version": { "enum": ["0.1", "0.2"] },
+    "global": { "$ref": "#/$defs/globalSettings" },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/taskFile" }
+    },
+    "aperiodic_tasks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/aperiodicTaskFile" },
+      "default": []
+    },
+    "sporadic_server": { "$ref": "#/$defs/sporadicServerConfig" },
+    "codegen": { "$ref": "#/$defs/codegenSettings" }
+  },
+  "$defs": {
+    "stackPresetName": { "enum": ["low", "mid", "high"] },
+    "priorityMode": { "enum": ["auto", "manual"] },
+    "globalSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tick_ms", "stack_presets"],
+      "properties": {
+        "tick_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "stack_presets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["low", "mid", "high"],
+          "properties": {
+            "low": { "type": "integer", "exclusiveMinimum": 0 },
+            "mid": { "type": "integer", "exclusiveMinimum": 0 },
+            "high": { "type": "integer", "exclusiveMinimum": 0 }
+          }
+        },
+        "ram_capacity": { "type": "integer", "exclusiveMinimum": 0 }
+      }
+    },
+    "taskFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "period_ms", "wcet_ms", "stack"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "name": { "type": "string", "minLength": 1 },
+        "period_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "wcet_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "deadline_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "priority_mode": { "$ref": "#/$defs/priorityMode" },
+        "manual_priority": { "type": "integer" },
+        "stack": { "$ref": "#/$defs/stackPresetName" },
+        "description": { "type": "string" }
+      }
+    },
+    "aperiodicTaskFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "wcet_ms", "stack"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "name": { "type": "string", "minLength": 1 },
+        "wcet_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "deadline_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "stack": { "$ref": "#/$defs/stackPresetName" },
+        "description": { "type": "string" }
+      }
+    },
+    "sporadicServerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "budget_ms", "period_ms", "stack"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "budget_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "period_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "deadline_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "priority_mode": { "$ref": "#/$defs/priorityMode" },
+        "manual_priority": { "type": "integer" },
+        "stack": { "$ref": "#/$defs/stackPresetName" }
+      }
+    },
+    "codegenSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin"],
+      "properties": {
+        "plugin": { "const": "freertos" },
+        "namespace": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
