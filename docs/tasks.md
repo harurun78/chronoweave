@@ -25,54 +25,54 @@
 - [x] T011 Implement ms-to-microseconds conversion while preserving fractional WCET values
 - [x] T012 Implement tick-grid validation for `period_ms` and `deadline_ms`
 - [x] T013 Implement LCM calculation and LCM > 10,000 tick warning
-- [ ] T014 Implement RMA auto priority and manual priority validation
-- [ ] T015 Implement approximate RTA, buffer consumed, and buffer remaining calculations
-- [ ] T016 Implement aperiodic capacity gauge derivation from lowest-priority task buffer remaining
-- [ ] T017 Implement memory profile series, peak bytes, and RAM capacity warning
-- [ ] T018 Implement Problems generation for schema, import, analysis, and approximate RTA Info
-- [ ] T019 Add AnalysisSnapshot unit and snapshot tests for representative fixtures
+- [x] T014 Implement RMA auto priority and manual priority validation
+- [x] T015 Implement approximate RTA, buffer consumed, and buffer remaining calculations
+- [x] T016 Implement aperiodic capacity gauge derivation from lowest-priority task buffer remaining
+- [x] T017 Implement memory profile series, peak bytes, and RAM capacity warning
+- [x] T018 Implement Problems generation for schema, import, analysis, and approximate RTA Info
+- [x] T019 Add AnalysisSnapshot unit and snapshot tests for representative fixtures
 
 ## Phase 4: State And History
 
-- [ ] T020 Implement ProjectState atom and derived AnalysisSnapshot atom
-- [ ] T021 Implement project update actions for task add, duplicate, delete, edit, and settings edit
-- [ ] T022 Implement shallow Undo/Redo history for persistent ProjectState changes
-- [ ] T023 Add state and history unit tests
+- [x] T020 Implement ProjectState atom and derived AnalysisSnapshot atom
+- [x] T021 Implement project update actions for task add, duplicate, delete, edit, and settings edit
+- [x] T022 Implement shallow Undo/Redo history for persistent ProjectState changes
+- [x] T023 Add state and history unit tests
 
 ## Phase 5: UI Panels
 
-- [ ] T024 Implement task list editor with add/delete/duplicate and cell editing
-- [ ] T025 Implement SVG Gantt rendering for periodic tasks over LCM window
-- [ ] T026 Implement WCET right-edge drag using @use-gesture/react
-- [ ] T027 Implement property panel for name, period, WCET, deadline, priority mode, manual priority, stack, and description
-- [ ] T028 Implement buffer gauges and aperiodic capacity gauge
-- [ ] T029 Implement memory profile waveform and peak/capacity display
-- [ ] T030 Implement Problems panel with Error/Warning/Info display and task focus on click
-- [ ] T031 Add component integration tests for list edit, property edit, Gantt drag, panel updates, and Problems click
+- [x] T024 Implement task list editor with add/delete/duplicate and cell editing
+- [x] T025 Implement SVG Gantt rendering for periodic tasks over LCM window
+- [x] T026 Implement WCET right-edge drag using @use-gesture/react
+- [x] T027 Implement property panel for name, period, WCET, deadline, priority mode, manual priority, stack, and description
+- [x] T028 Implement buffer gauges and aperiodic capacity gauge
+- [x] T029 Implement memory profile waveform and peak/capacity display
+- [x] T030 Implement Problems panel with Error/Warning/Info display and task focus on click
+- [x] T031 Add component integration tests for list edit, property edit, Gantt drag, panel updates, and Problems click
 
 ## Phase 6: Import Export Workflow
 
-- [ ] T032 Implement YAML export excluding transient UI state
-- [ ] T033 Implement JSON export excluding transient UI state
-- [ ] T034 Implement YAML import with validate-before-replace behavior
-- [ ] T035 Implement JSON import with validate-before-replace behavior
-- [ ] T036 Add export/import roundtrip tests comparing normalized ProjectFile and AnalysisSnapshot
+- [x] T032 Implement YAML export excluding transient UI state
+- [x] T033 Implement JSON export excluding transient UI state
+- [x] T034 Implement YAML import with validate-before-replace behavior
+- [x] T035 Implement JSON import with validate-before-replace behavior
+- [x] T036 Add export/import roundtrip tests comparing normalized ProjectFile and AnalysisSnapshot
 
 ## Phase 7: Representative E2E And Performance
 
-- [ ] T037 Add E2E for import Motor Control 1-axis sample -> duplicate `MotorCtrl_Y` -> drag WCET -> export YAML -> reset -> import YAML
-- [ ] T038 Add E2E assertion that approximate RTA Info is always visible
-- [ ] T039 Add performance marks for WCET drag visual response and ProjectState commit-to-redraw
-- [ ] T040 Add performance marks for YAML/JSON import/export of <=100KB fixtures
-- [ ] T041 Record Phase 1 performance budget results and remediation plan for any missed budget
+- [x] T037 Add E2E for import Motor Control 1-axis sample -> duplicate `MotorCtrl_Y` -> drag WCET -> export YAML -> reset -> import YAML
+- [x] T038 Add E2E assertion that approximate RTA Info is always visible
+- [x] T039 Add performance marks for WCET drag visual response and ProjectState commit-to-redraw
+- [x] T040 Add performance marks for YAML/JSON import/export of <=100KB fixtures
+- [x] T041 Record Phase 1 performance budget results and remediation plan for any missed budget
 
 ## Phase 8: Release Gate
 
-- [ ] T042 Verify unit tests pass
-- [ ] T043 Verify integration tests pass
-- [ ] T044 Verify representative E2E passes
-- [ ] T045 Verify production build passes
-- [ ] T046 Review Phase 1 scope boundaries: no non-periodic task input, no iterative RTA, no code generation, no trace import
+- [x] T042 Verify unit tests pass
+- [x] T043 Verify integration tests pass
+- [x] T044 Verify representative E2E passes
+- [x] T045 Verify production build passes
+- [x] T046 Review Phase 1 scope boundaries: no non-periodic task input, no iterative RTA, no code generation, no trace import
 
 ## Dependencies
 
