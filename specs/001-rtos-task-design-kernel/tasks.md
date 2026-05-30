@@ -6,10 +6,10 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Create Vite + React + TypeScript app foundation with strict TypeScript settings
-- [ ] T002 Configure npm scripts for lint, type-check, unit tests, E2E tests, and build
-- [ ] T003 Add Jotai, @use-gesture/react, @tanstack/react-table, react-resizable-panels, schema validation, and YAML parser dependencies
-- [ ] T004 Create 3-pane app shell with placeholders for task list, Gantt, property panel, gauges, memory profile, and Problems
+- [x] T001 Create Vite + React + TypeScript app foundation with strict TypeScript settings
+- [x] T002 Configure npm scripts for lint, type-check, unit tests, E2E tests, and build
+- [x] T003 Add Jotai, @use-gesture/react, @tanstack/react-table, react-resizable-panels, schema validation, and YAML parser dependencies
+- [x] T004 Create 3-pane app shell with placeholders for task list, Gantt, property panel, gauges, memory profile, and Problems
 
 ## Phase 2: ProjectFile Schema And Fixtures
 

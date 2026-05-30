@@ -29,7 +29,7 @@ Task model, ProjectFile schema, analysis kernel, UI panels, import/export, and f
 - Rendering: React + SVG self-drawn Gantt; no project-management Gantt library in Phase 1.
 - Scope: single-core RTOS periodic tasks, RMA, approximate RTA, buffer gauges, memory profile, Problems, YAML/JSON import/export.
 - Out of Phase 1: non-periodic task input, Sporadic Server, iterative RTA, RTOS code generation, trace import, multi-core, heterogeneous SoC modeling.
-- Current repository stores specifications only. Implementation code must live in an exported or separate implementation repository.
+- This repository is the exported implementation repository. Specifications remain under `specs/` and `docs/`, while implementation code lives at the repository root in `src/` and `test/`.
 
 ## Development Workflow
 
@@ -43,4 +43,4 @@ Task model, ProjectFile schema, analysis kernel, UI panels, import/export, and f
 
 This constitution governs speckit specs for Chronoweave. Changes that expand Phase 1 beyond RTOS Task Design Kernel, remove approximate-RTA disclosure, change the canonical ProjectFile format, or introduce code generation into Phase 1 require an explicit specification update and rationale.
 
-**Version**: 0.1.0 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-05-30
+**Version**: 0.1.1 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-05-30

@@ -4,7 +4,7 @@
 
 **Input**: Feature specification from `specs/001-rtos-task-design-kernel/spec.md`
 
-**Note**: This plan is created inside a spec-only repository. Implementation code is not stored here.
+**Note**: This plan is being executed in the exported implementation repository. Implementation code is stored at the repository root under `src/` and `test/`.
 
 ## Summary
 
@@ -12,9 +12,9 @@ Build Chronoweave Phase 1 as a static React + TypeScript web app. Users import a
 
 ## Technical Context
 
-**Language/Version**: TypeScript on current Node.js LTS; exact Node version to be fixed in implementation repository.
+**Language/Version**: TypeScript on Node.js 20.
 
-**Primary Dependencies**: React, Vite, Jotai, @use-gesture/react, @tanstack/react-table, react-resizable-panels, Zod or equivalent schema library, yaml parser, Vitest, React Testing Library, Playwright or equivalent E2E tool.
+**Primary Dependencies**: React, Vite, Jotai, @use-gesture/react, @tanstack/react-table, react-resizable-panels, Zod, yaml, Vitest, React Testing Library, Playwright.
 
 **Storage**: Local browser file import/export only. No server storage in Phase 1.
 
@@ -32,13 +32,13 @@ Build Chronoweave Phase 1 as a static React + TypeScript web app. Users import a
 
 ## Constitution Check
 
-| Principle | Check | Status |
-|---|---|---|
-| Interactive Design Loop First | All panels derive from ProjectState and AnalysisSnapshot | PASS |
-| ProjectFile As Stable Intermediate Representation | YAML/JSON ProjectFile v0.1 is part of Phase 1 | PASS |
-| Analysis Honesty | Approximate RTA disclosure Info is mandatory | PASS |
-| Responsive UI Is A Requirement | Performance budgets are in spec and tasks | PASS |
-| Modular Boundaries For Future Phases | Code generation and trace import are excluded from Phase 1 | PASS |
+| Principle                                         | Check                                                      | Status |
+| ------------------------------------------------- | ---------------------------------------------------------- | ------ |
+| Interactive Design Loop First                     | All panels derive from ProjectState and AnalysisSnapshot   | PASS   |
+| ProjectFile As Stable Intermediate Representation | YAML/JSON ProjectFile v0.1 is part of Phase 1              | PASS   |
+| Analysis Honesty                                  | Approximate RTA disclosure Info is mandatory               | PASS   |
+| Responsive UI Is A Requirement                    | Performance budgets are in spec and tasks                  | PASS   |
+| Modular Boundaries For Future Phases              | Code generation and trace import are excluded from Phase 1 | PASS   |
 
 ## Project Structure
 
@@ -56,7 +56,7 @@ specs/001-rtos-task-design-kernel/
     └── project-file.schema.json
 ```
 
-### Source Code (implementation repository)
+### Source Code (this repository)
 
 ```text
 src/
