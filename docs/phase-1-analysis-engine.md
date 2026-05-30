@@ -48,6 +48,14 @@ LCM、effective priority、近似応答時間、バッファ、Problems、メモ
 - [ ] period が同じ auto priority タスクは stable order で tie break する
 - [ ] manual priority タスクは validation 後に effective priority へ反映される
 
+### Phase 1 priority semantics
+
+- `effective_priority` は小さい整数ほど高優先度とする。
+- manual priority の許容範囲は `1..taskCount` とする。
+- manual priority の重複は Error Problem として扱う。
+- auto/manual 混在時は manual priority を固定枠として先に割り当て、auto task は残りの priority 番号へ RMA order（period 昇順、同 period は入力順）で割り当てる。
+- manual priority が auto task と同じ番号になることは、auto 割り当て側が空き番号を選ぶことで避ける。
+
 ### スコープ外
 
 - Deadline Monotonic priority
@@ -77,6 +85,13 @@ BufferConsumed(task) = sum(wcet_ms of higher priority tasks that can preempt onc
 BufferRemaining(task) = Buffer(task) - BufferConsumed(task)
 ApproxResponseTime(task) = wcet_ms + BufferConsumed(task)
 ```
+
+Phase 1 では、higher priority task は対象 task の response window 内で最大 1 回だけ preempt できる近似として扱う。これは反復 RTA より楽観的なため、Info Problem を常時表示する。
+
+初期 Warning 閾値:
+
+- `bufferRemainingMs / periodMs <= 10%` の task は Warning。
+- `bufferRemainingMs < 0` または `approximateResponseTimeMs > effectiveDeadlineMs` は Error。
 
 ### 受け入れ条件
 
@@ -142,6 +157,13 @@ Phase 1 では stack preset を必須にし、tick ごとのスタック同時�
 - [ ] peak stack bytes を表示できる
 - [ ] `ramCapacityBytes` がある場合 capacity line を表示できる
 - [ ] peak が RAM の閾値を超える場合 Warning を出す
+
+### Phase 1 sampling policy
+
+- memory profile は LCM window 内の tick ごとの近似 stack usage とする。
+- 各 tick では、周期 offset が `wcet_ms` 未満の task を active とみなし、その stack preset bytes を加算する。
+- LCM が 10,000 tick を超える場合は LCM Warning を出し、series は最初の 10,000 tick に cap する。
+- `peak_bytes / ram_capacity >= 90%` の場合 Warning。
 
 ### スコープ外
 

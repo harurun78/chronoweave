@@ -149,6 +149,7 @@ Per-task derived analysis.
 ### 受け入れ条件
 
 - [ ] Every task gets TaskAnalysis even if it has Problems.
+- [ ] Lower `effective_priority` numbers represent higher priority in Phase 1.
 
 ## MemoryProfile
 
