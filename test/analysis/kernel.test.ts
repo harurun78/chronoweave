@@ -57,12 +57,18 @@ describe('analysis kernel', () => {
         schedulable: true
       })
     ]);
-    expect(snapshot.problems).toEqual([
-      expect.objectContaining({
-        id: 'analysis-approximate-rta-info',
-        level: 'info'
-      })
-    ]);
+    expect(snapshot.problems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'analysis-approximate-rta-info',
+          level: 'info'
+        }),
+        expect.objectContaining({
+          id: 'analysis-iterative-rta-info',
+          level: 'info'
+        })
+      ])
+    );
   });
 
   it('reports large LCM, high utilization, and memory warning fixtures', () => {
@@ -117,6 +123,58 @@ describe('analysis kernel', () => {
         expect.objectContaining({
           id: 'analysis-sensor-fusion-manual-priority-range'
         })
+      ])
+    );
+  });
+
+  it('analyzes Phase 2 aperiodic work through Sporadic Server', () => {
+    const snapshot = analyzeProject(loadProjectState('phase-2-aperiodic.yaml'));
+
+    expect(snapshot.sporadic_server).toMatchObject({
+      enabled: true,
+      budget_ms: 2,
+      period_ms: 20,
+      effective_priority: 3,
+      capacity_utilization_percent: 75,
+      schedulable: true
+    });
+    expect(
+      snapshot.tasks.find((task) => task.task_id === 'sensor-fusion')
+    ).toMatchObject({
+      effective_priority: 4,
+      iterative_response_time_ms: 14.75,
+      iterative_schedulable: true
+    });
+    expect(snapshot.problems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'analysis-iterative-rta-info' })
+      ])
+    );
+  });
+
+  it('reports Phase 2 server and iterative RTA Problems', () => {
+    expect(
+      analyzeProject(loadProjectState('phase-2-budget-exceeded.yaml')).problems
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'analysis-sporadic-server-budget-exceeded'
+        })
+      ])
+    );
+    expect(
+      analyzeProject(loadProjectState('phase-2-no-server.yaml')).problems
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'analysis-aperiodic-no-sporadic-server' })
+      ])
+    );
+    expect(
+      analyzeProject(loadProjectState('phase-2-iterative-deadline-miss.yaml'))
+        .problems
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'analysis-slow-iterative-deadline-miss' })
       ])
     );
   });

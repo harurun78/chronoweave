@@ -91,3 +91,27 @@ test('runs the representative Phase 1 design loop', async ({ page }) => {
     )
     .toBeLessThan(100);
 });
+
+test('runs the Phase 2 aperiodic and codegen smoke flow', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Motor Control + Aperiodic' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'Iterative RTA' })
+  ).toBeVisible();
+  await expect(page.getByText('1 aperiodic tasks')).toBeVisible();
+  await expect(page.getByText('Server 75%')).toBeVisible();
+  await expect(page.getByText(/Phase 2 iterative response time/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Generate FreeRTOS' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'FreeRTOS Preview' })
+  ).toBeVisible();
+  await expect(page.getByText('MotorDemo_tasks.c')).toBeVisible();
+  await expect(page.getByText(/MotorDemoSporadicServerTask/)).toBeVisible();
+  await expect
+    .poll(() => measureDuration(page, 'chronoweave-codegen'))
+    .toBeLessThan(300);
+});

@@ -2,6 +2,7 @@ import { useDrag } from '@use-gesture/react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 
+import { generateFreeRtosFiles } from '../codegen/freertos';
 import {
   normalizedProjectToProjectState,
   parseSerializedProjectFile,
@@ -10,12 +11,17 @@ import {
 } from '../io/projectFileIo';
 import type {
   AnalysisSnapshot,
+  GeneratedFile,
   NormalizedTaskModel,
   Problem,
+  ProjectState,
   StackPresetName,
   TaskAnalysis
 } from '../model/project';
-import { createDuplicatedAxisTask } from '../samples/motorControl';
+import {
+  createDuplicatedAxisTask,
+  motorControlWithAperiodicProject
+} from '../samples/motorControl';
 import {
   analysisSnapshotAtom,
   projectHistoryAtom,
@@ -42,6 +48,7 @@ export function App() {
   const redoProjectState = useSetAtom(redoProjectStateAtom);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [lastImportProblems, setLastImportProblems] = useState<Problem[]>([]);
+  const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
 
   useEffect(() => {
     performance.mark?.('chronoweave-project-state-redraw');
@@ -149,6 +156,29 @@ export function App() {
     }));
   }
 
+  function loadPhaseTwoSample() {
+    performance.mark?.('chronoweave-project-state-commit-start');
+    setGeneratedFiles([]);
+    replaceProjectState(
+      normalizedProjectToProjectState(
+        motorControlWithAperiodicProject,
+        'diagnostics-request'
+      )
+    );
+  }
+
+  function generateFreeRtosPreview() {
+    performance.mark?.('chronoweave-codegen-start');
+    const files = generateFreeRtosFiles(projectState);
+    performance.mark?.('chronoweave-codegen-end');
+    performance.measure?.(
+      'chronoweave-codegen',
+      'chronoweave-codegen-start',
+      'chronoweave-codegen-end'
+    );
+    setGeneratedFiles(files);
+  }
+
   function exportProject(format: ProjectFileFormat) {
     performance.mark?.(`chronoweave-export-${format}-start`);
     const serializedProject = serializeProjectFile(projectState, format);
@@ -194,6 +224,7 @@ export function App() {
     }
 
     setLastImportProblems([]);
+    setGeneratedFiles([]);
     performance.mark?.('chronoweave-project-state-commit-start');
     replaceProjectState(
       normalizedProjectToProjectState(result.normalizedProjectFile)
@@ -211,6 +242,9 @@ export function App() {
           <button type="button" onClick={resetProjectState}>
             Motor Control 1-axis
           </button>
+          <button type="button" onClick={loadPhaseTwoSample}>
+            Motor Control + Aperiodic
+          </button>
           <button type="button" onClick={() => importInputRef.current?.click()}>
             Import
           </button>
@@ -219,6 +253,9 @@ export function App() {
           </button>
           <button type="button" onClick={() => exportProject('json')}>
             Export JSON
+          </button>
+          <button type="button" onClick={generateFreeRtosPreview}>
+            Generate FreeRTOS
           </button>
           <button
             type="button"
@@ -307,9 +344,14 @@ export function App() {
               tasks={projectState.tasks}
             />
             <MemoryPanel analysisSnapshot={analysisSnapshot} />
+            <PhaseTwoPanel
+              analysisSnapshot={analysisSnapshot}
+              projectState={projectState}
+            />
           </section>
 
           <ProblemsPanel problems={problems} onSelectTask={selectTask} />
+          <CodegenPreview files={generatedFiles} />
         </section>
 
         <PropertyPanel
@@ -320,6 +362,69 @@ export function App() {
         />
       </main>
     </div>
+  );
+}
+
+function PhaseTwoPanel({
+  analysisSnapshot,
+  projectState
+}: {
+  analysisSnapshot: AnalysisSnapshot;
+  projectState: ProjectState;
+}) {
+  const server = analysisSnapshot.sporadic_server;
+
+  return (
+    <article className="panel metric-panel phase-two-panel">
+      <p className="eyebrow">Phase 2</p>
+      <h2>Iterative RTA</h2>
+      <div className="analysis-list">
+        {analysisSnapshot.tasks.map((taskAnalysis) => {
+          const task = projectState.tasks.find(
+            (candidate) => candidate.id === taskAnalysis.task_id
+          );
+          return (
+            <div key={taskAnalysis.task_id}>
+              <span>{task?.name ?? taskAnalysis.task_id}</span>
+              <strong>{taskAnalysis.iterative_response_time_ms} ms</strong>
+            </div>
+          );
+        })}
+      </div>
+      <div className="server-summary">
+        <span>{projectState.aperiodic_tasks.length} aperiodic tasks</span>
+        <strong>
+          Server{' '}
+          {server?.enabled === true
+            ? `${server.capacity_utilization_percent}%`
+            : 'off'}
+        </strong>
+      </div>
+    </article>
+  );
+}
+
+function CodegenPreview({ files }: { files: GeneratedFile[] }) {
+  if (files.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="panel codegen-preview" aria-labelledby="codegen-title">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Codegen</p>
+          <h2 id="codegen-title">FreeRTOS Preview</h2>
+        </div>
+        <span className="count-pill">{files.length} files</span>
+      </div>
+      {files.map((file) => (
+        <details key={file.path} open={file.path.endsWith('.c')}>
+          <summary>{file.path}</summary>
+          <pre>{file.content}</pre>
+        </details>
+      ))}
+    </section>
   );
 }
 

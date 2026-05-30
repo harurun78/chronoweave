@@ -66,6 +66,67 @@ describe('ProjectFile schema validation and normalization', () => {
       deadline_ms: 5,
       priority_mode: 'auto'
     });
+    expect(result.normalizedProjectFile.aperiodic_tasks).toEqual([]);
+  });
+
+  it('validates ProjectFile v0.2 aperiodic tasks and Sporadic Server', () => {
+    const result = parseProjectFileYaml(readFixture('phase-2-aperiodic.yaml'));
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.normalizedProjectFile).toMatchObject({
+      version: '0.2',
+      aperiodic_tasks: [
+        expect.objectContaining({ id: 'diagnostics-request', wcet_ms: 1.5 })
+      ],
+      sporadic_server: expect.objectContaining({
+        enabled: true,
+        deadline_ms: 20,
+        priority_mode: 'manual'
+      }),
+      codegen: { plugin: 'freertos', namespace: 'MotorDemo' }
+    });
+  });
+
+  it('rejects duplicate ids across periodic and aperiodic tasks', () => {
+    const result = validateProjectFile({
+      version: '0.2',
+      global: {
+        tick_ms: 1,
+        stack_presets: { low: 512, mid: 2048, high: 4096 }
+      },
+      tasks: [
+        {
+          id: 'shared-id',
+          name: 'Periodic',
+          period_ms: 10,
+          wcet_ms: 1,
+          stack: 'low'
+        }
+      ],
+      aperiodic_tasks: [
+        {
+          id: 'shared-id',
+          name: 'Aperiodic',
+          wcet_ms: 1,
+          stack: 'low'
+        }
+      ]
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (result.ok) {
+      return;
+    }
+
+    expect(
+      result.problems.map((problem) => problem.message).join('\n')
+    ).toContain('Duplicate task id: shared-id');
   });
 
   it('rejects invalid schema values as schema/import problems', () => {
@@ -161,12 +222,16 @@ describe('ProjectFile schema validation and normalization', () => {
     ).toContain('manual_priority is required');
   });
 
-  it.each(['lcm-warning.yaml', 'high-utilization.yaml', 'memory-warning.yaml'])(
-    'keeps the %s analysis fixture schema-valid',
-    (fixtureName) => {
-      const result = parseProjectFileYaml(readFixture(fixtureName));
+  it.each([
+    'lcm-warning.yaml',
+    'high-utilization.yaml',
+    'memory-warning.yaml',
+    'phase-2-budget-exceeded.yaml',
+    'phase-2-no-server.yaml',
+    'phase-2-iterative-deadline-miss.yaml'
+  ])('keeps the %s analysis fixture schema-valid', (fixtureName) => {
+    const result = parseProjectFileYaml(readFixture(fixtureName));
 
-      expect(result.ok).toBe(true);
-    }
-  );
+    expect(result.ok).toBe(true);
+  });
 });

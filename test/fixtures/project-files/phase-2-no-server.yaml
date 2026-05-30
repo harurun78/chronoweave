@@ -1,0 +1,18 @@
+version: '0.2'
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+tasks:
+  - id: control
+    name: Control
+    period_ms: 10
+    wcet_ms: 2
+    stack: mid
+aperiodic_tasks:
+  - id: diagnostics-request
+    name: DiagnosticsRequest
+    wcet_ms: 1
+    stack: low

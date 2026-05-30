@@ -92,8 +92,31 @@ describe('App shell', () => {
     await user.click(screen.getByLabelText('ISR_Timer name'));
     expect(screen.getByLabelText('Name')).toHaveValue('ISR_Timer');
 
-    await user.click(screen.getByRole('button', { name: 'error' }));
+    await user.click(screen.getAllByRole('button', { name: 'error' })[0]);
 
     expect(screen.getByLabelText('Name')).toHaveValue('SensorFusion');
+  });
+
+  it('loads Phase 2 sample and generates FreeRTOS preview', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Motor Control + Aperiodic' })
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Iterative RTA' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('1 aperiodic tasks')).toBeInTheDocument();
+    expect(screen.getByText('Server 75%')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Generate FreeRTOS' }));
+
+    expect(
+      screen.getByRole('heading', { name: 'FreeRTOS Preview' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('MotorDemo_tasks.c')).toBeInTheDocument();
+    expect(screen.getByText(/MotorDemoSporadicServerTask/)).toBeInTheDocument();
   });
 });

@@ -1,0 +1,19 @@
+version: '0.2'
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+tasks:
+  - id: fast
+    name: Fast
+    period_ms: 3
+    wcet_ms: 1
+    stack: low
+  - id: slow
+    name: Slow
+    period_ms: 10
+    wcet_ms: 4
+    deadline_ms: 5
+    stack: mid

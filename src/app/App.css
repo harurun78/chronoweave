@@ -300,6 +300,45 @@ th {
   background: #5b7185;
 }
 
+.analysis-list,
+.server-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.analysis-list div,
+.server-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e5e8ec;
+  padding-bottom: 8px;
+}
+
+.codegen-preview details {
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.codegen-preview summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.codegen-preview pre {
+  overflow: auto;
+  background: #172029;
+  border-radius: 6px;
+  color: #f6f7f9;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 10px 0 0;
+  padding: 12px;
+  white-space: pre;
+}
+
 .problems-panel ul {
   list-style: none;
   padding: 0;

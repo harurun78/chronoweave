@@ -94,7 +94,16 @@ export function persistentProject(
       ...projectState.global,
       stack_presets: { ...projectState.global.stack_presets }
     },
-    tasks: projectState.tasks.map((task) => ({ ...task }))
+    tasks: projectState.tasks.map((task) => ({ ...task })),
+    aperiodic_tasks: projectState.aperiodic_tasks.map((task) => ({ ...task })),
+    sporadic_server:
+      projectState.sporadic_server === undefined
+        ? undefined
+        : { ...projectState.sporadic_server },
+    codegen:
+      projectState.codegen === undefined
+        ? undefined
+        : { ...projectState.codegen }
   };
 }
 
@@ -114,6 +123,13 @@ function clonePersistentProject(
       ...projectFile.global,
       stack_presets: { ...projectFile.global.stack_presets }
     },
-    tasks: projectFile.tasks.map((task) => ({ ...task }))
+    tasks: projectFile.tasks.map((task) => ({ ...task })),
+    aperiodic_tasks: projectFile.aperiodic_tasks.map((task) => ({ ...task })),
+    sporadic_server:
+      projectFile.sporadic_server === undefined
+        ? undefined
+        : { ...projectFile.sporadic_server },
+    codegen:
+      projectFile.codegen === undefined ? undefined : { ...projectFile.codegen }
   };
 }
