@@ -22,9 +22,9 @@
 
 ## Phase 3: Analysis Kernel
 
-- [ ] T011 Implement ms-to-microseconds conversion while preserving fractional WCET values
-- [ ] T012 Implement tick-grid validation for `period_ms` and `deadline_ms`
-- [ ] T013 Implement LCM calculation and LCM > 10,000 tick warning
+- [x] T011 Implement ms-to-microseconds conversion while preserving fractional WCET values
+- [x] T012 Implement tick-grid validation for `period_ms` and `deadline_ms`
+- [x] T013 Implement LCM calculation and LCM > 10,000 tick warning
 - [ ] T014 Implement RMA auto priority and manual priority validation
 - [ ] T015 Implement approximate RTA, buffer consumed, and buffer remaining calculations
 - [ ] T016 Implement aperiodic capacity gauge derivation from lowest-priority task buffer remaining
