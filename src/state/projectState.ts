@@ -2,6 +2,7 @@ import { atom } from 'jotai';
 
 import { analyzeProject } from '../analysis/kernel';
 import type { NormalizedProjectFile, ProjectState } from '../model/project';
+import { DEFAULT_DOMAIN_ID } from '../model/project';
 import { createInitialProjectState } from '../samples/motorControl';
 
 export interface ProjectHistory {
@@ -10,6 +11,21 @@ export interface ProjectHistory {
 }
 
 export const projectStateAtom = atom<ProjectState>(createInitialProjectState());
+const activeDomainIdBaseAtom = atom<string | undefined>(undefined);
+export const activeDomainIdAtom = atom(
+  (get) => {
+    const projectState = get(projectStateAtom);
+    const activeDomainId = get(activeDomainIdBaseAtom);
+
+    return activeDomainId !== undefined &&
+      projectState.domains.some((domain) => domain.id === activeDomainId)
+      ? activeDomainId
+      : (projectState.domains[0]?.id ?? DEFAULT_DOMAIN_ID);
+  },
+  (_get, set, domainId: string | undefined) => {
+    set(activeDomainIdBaseAtom, domainId);
+  }
+);
 export const projectHistoryAtom = atom<ProjectHistory>({
   past: [],
   future: []
@@ -128,12 +144,17 @@ function clonePersistentProject(
       ...projectFile.global,
       stack_presets: { ...projectFile.global.stack_presets }
     },
+    domains: projectFile.domains.map((domain) => ({ ...domain })),
     tasks: projectFile.tasks.map((task) => ({ ...task })),
     aperiodic_tasks: projectFile.aperiodic_tasks.map((task) => ({ ...task })),
     sporadic_server:
       projectFile.sporadic_server === undefined
         ? undefined
         : { ...projectFile.sporadic_server },
+    channels: projectFile.channels.map((channel) => ({ ...channel })),
+    stochastic_events: projectFile.stochastic_events.map((event) => ({
+      ...event
+    })),
     codegen:
       projectFile.codegen === undefined ? undefined : { ...projectFile.codegen }
   };

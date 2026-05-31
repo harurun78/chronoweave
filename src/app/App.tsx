@@ -27,11 +27,13 @@ import {
   undoProjectStateAtom,
   updateProjectStateAtom
 } from '../state/projectState';
+import { activeDomainIdAtom } from '../state/projectState';
 import { useObservation } from '../hooks/useObservation';
 import { usePerfMeasure } from '../hooks/usePerfMeasure';
 import { useTraceImport } from '../hooks/useTraceImport';
 import { BufferPanel } from '../ui/BufferPanel';
 import { CodegenPreview } from '../ui/CodegenPreview';
+import { DomainTabs } from '../ui/DomainTabs';
 import { GanttChart } from '../ui/GanttChart';
 import { HeaderActions } from '../ui/HeaderActions';
 import { MemoryPanel } from '../ui/MemoryPanel';
@@ -46,6 +48,7 @@ import { messages } from '../i18n/messages.en';
 
 export function App() {
   const [projectState, setProjectState] = useAtom(projectStateAtom);
+  const [activeDomainId, setActiveDomainId] = useAtom(activeDomainIdAtom);
   const analysisSnapshot = useAtomValue(analysisSnapshotAtom);
   const history = useAtomValue(projectHistoryAtom);
   const updateProjectState = useSetAtom(updateProjectStateAtom);
@@ -75,10 +78,16 @@ export function App() {
     }
   }, [analysisSnapshot, projectState]);
 
+  const visibleTasks = projectState.tasks.filter(
+    (task) => task.domain_id === activeDomainId
+  );
+  const visibleTaskIds = new Set(visibleTasks.map((task) => task.id));
+  const visibleAnalyses = analysisSnapshot.tasks.filter((analysis) =>
+    visibleTaskIds.has(analysis.task_id)
+  );
   const selectedTask =
-    projectState.tasks.find(
-      (task) => task.id === projectState.selectedTaskId
-    ) ?? projectState.tasks[0];
+    visibleTasks.find((task) => task.id === projectState.selectedTaskId) ??
+    visibleTasks[0];
   const observationComparison = useObservation(
     projectState,
     trace.observedTasks
@@ -91,6 +100,13 @@ export function App() {
   ];
 
   function selectTask(taskId: string) {
+    const task = projectState.tasks.find(
+      (candidate) => candidate.id === taskId
+    );
+    if (task !== undefined) {
+      setActiveDomainId(task.domain_id);
+    }
+
     setProjectState((current) => ({ ...current, selectedTaskId: taskId }));
   }
 
@@ -116,7 +132,7 @@ export function App() {
       deadline_ms: 10,
       priority_mode: 'auto',
       stack: 'low',
-      domain_id: projectState.domains[0]?.id ?? 'default'
+      domain_id: activeDomainId ?? projectState.domains[0]?.id ?? 'default'
     };
 
     updateProjectState((current) => ({
@@ -128,20 +144,17 @@ export function App() {
 
   function duplicateSelectedTask() {
     perf.mark('chronoweave-project-state-commit-start');
-    const sourceTask =
-      selectedTask ??
-      projectState.tasks.find((task) => task.name === 'MotorCtrl_X');
-    if (sourceTask === undefined) {
+    if (selectedTask === undefined) {
       return;
     }
 
     const duplicatedTask =
-      sourceTask.name === 'MotorCtrl_X'
-        ? createDuplicatedAxisTask(sourceTask)
+      selectedTask.name === 'MotorCtrl_X'
+        ? createDuplicatedAxisTask(selectedTask)
         : {
-            ...sourceTask,
-            id: `${sourceTask.id}-copy-${projectState.tasks.length + 1}`,
-            name: `${sourceTask.name}_Copy`
+            ...selectedTask,
+            id: `${selectedTask.id}-copy-${projectState.tasks.length + 1}`,
+            name: `${selectedTask.name}_Copy`
           };
 
     updateProjectState((current) => ({
@@ -278,34 +291,41 @@ export function App() {
 
       <main className="workspace-grid">
         <section className="panel task-panel" aria-labelledby="task-list-title">
+          <DomainTabs />
           <div className="panel-heading">
             <div>
               <p className="eyebrow">{messages.panels.taskList.eyebrow}</p>
               <h2 id="task-list-title">{messages.panels.taskList.title}</h2>
             </div>
             <span className="count-pill">
-              {projectState.tasks.length} {messages.panels.taskList.countSuffix}
+              {visibleTasks.length} {messages.panels.taskList.countSuffix}
             </span>
           </div>
           <div className="panel-actions">
             <button type="button" onClick={addTask}>
               {messages.panels.taskList.add}
             </button>
-            <button type="button" onClick={duplicateSelectedTask}>
+            <button
+              type="button"
+              onClick={duplicateSelectedTask}
+              disabled={selectedTask === undefined}
+            >
               {messages.panels.taskList.duplicate}
             </button>
             <button
               type="button"
               onClick={deleteSelectedTask}
-              disabled={projectState.tasks.length <= 1}
+              disabled={
+                projectState.tasks.length <= 1 || selectedTask === undefined
+              }
             >
               {messages.panels.taskList.delete}
             </button>
           </div>
           <TaskTable
-            analyses={analysisSnapshot.tasks}
+            analyses={visibleAnalyses}
             selectedTaskId={selectedTask?.id}
-            tasks={projectState.tasks}
+            tasks={visibleTasks}
             onSelectTask={selectTask}
             onUpdateTask={updateTask}
           />
@@ -340,10 +360,7 @@ export function App() {
             className="metric-grid"
             aria-label={messages.workspace.derivedLabel}
           >
-            <BufferPanel
-              analyses={analysisSnapshot.tasks}
-              tasks={projectState.tasks}
-            />
+            <BufferPanel analyses={visibleAnalyses} tasks={visibleTasks} />
             <MemoryPanel analysisSnapshot={analysisSnapshot} />
             <PhaseTwoPanel
               analysisSnapshot={analysisSnapshot}
