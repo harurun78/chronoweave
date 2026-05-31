@@ -1,6 +1,7 @@
 import { useDrag } from '@use-gesture/react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { messages } from '../i18n/messages.en';
 
 import { generateFreeRtosFiles } from '../codegen/freertos';
 import {
@@ -281,44 +282,47 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">RTOS Task Design Kernel</p>
-          <h1>Chronoweave</h1>
+          <p className="eyebrow">{messages.app.eyebrow}</p>
+          <h1>{messages.app.title}</h1>
         </div>
-        <div className="header-actions" aria-label="Project actions">
+        <div
+          className="header-actions"
+          aria-label={messages.projectActions.label}
+        >
           <button type="button" onClick={resetProjectState}>
-            Motor Control 1-axis
+            {messages.projectActions.loadSampleMotor}
           </button>
           <button type="button" onClick={loadPhaseTwoSample}>
-            Motor Control + Aperiodic
+            {messages.projectActions.loadSampleAperiodic}
           </button>
           <button type="button" onClick={() => importInputRef.current?.click()}>
-            Import
+            {messages.projectActions.import}
           </button>
           <button type="button" onClick={() => traceInputRef.current?.click()}>
-            Import Trace CSV
+            {messages.projectActions.importTraceCsv}
           </button>
           <button type="button" onClick={() => exportProject('yaml')}>
-            Export YAML
+            {messages.projectActions.exportYaml}
           </button>
           <button type="button" onClick={() => exportProject('json')}>
-            Export JSON
+            {messages.projectActions.exportJson}
           </button>
           <button type="button" onClick={generateFreeRtosPreview}>
-            Generate FreeRTOS
+            {messages.projectActions.generateFreeRtos}
           </button>
           <button
             type="button"
             disabled={history.past.length === 0}
             onClick={undoProjectState}
           >
-            Undo
+            {messages.projectActions.undo}
           </button>
           <button
             type="button"
             disabled={history.future.length === 0}
             onClick={redoProjectState}
           >
-            Redo
+            {messages.projectActions.redo}
           </button>
           <input
             ref={importInputRef}
@@ -343,26 +347,26 @@ export function App() {
         <section className="panel task-panel" aria-labelledby="task-list-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">ProjectState</p>
-              <h2 id="task-list-title">Task List</h2>
+              <p className="eyebrow">{messages.panels.taskList.eyebrow}</p>
+              <h2 id="task-list-title">{messages.panels.taskList.title}</h2>
             </div>
             <span className="count-pill">
-              {projectState.tasks.length} tasks
+              {projectState.tasks.length} {messages.panels.taskList.countSuffix}
             </span>
           </div>
           <div className="panel-actions">
             <button type="button" onClick={addTask}>
-              Add
+              {messages.panels.taskList.add}
             </button>
             <button type="button" onClick={duplicateSelectedTask}>
-              Duplicate
+              {messages.panels.taskList.duplicate}
             </button>
             <button
               type="button"
               onClick={deleteSelectedTask}
               disabled={projectState.tasks.length <= 1}
             >
-              Delete
+              {messages.panels.taskList.delete}
             </button>
           </div>
           <TaskTable
@@ -374,15 +378,19 @@ export function App() {
           />
         </section>
 
-        <section className="center-stack" aria-label="Analysis workspace">
+        <section
+          className="center-stack"
+          aria-label={messages.workspace.analysisLabel}
+        >
           <section className="panel gantt-panel" aria-labelledby="gantt-title">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">AnalysisSnapshot</p>
-                <h2 id="gantt-title">Gantt</h2>
+                <p className="eyebrow">{messages.panels.gantt.eyebrow}</p>
+                <h2 id="gantt-title">{messages.panels.gantt.title}</h2>
               </div>
               <span className="count-pill">
-                LCM {analysisSnapshot.lcm_ms} ms
+                {messages.panels.gantt.lcmPrefix} {analysisSnapshot.lcm_ms}{' '}
+                {messages.panels.gantt.lcmSuffix}
               </span>
             </div>
             <GanttChart
@@ -395,7 +403,10 @@ export function App() {
             />
           </section>
 
-          <section className="metric-grid" aria-label="Derived panels">
+          <section
+            className="metric-grid"
+            aria-label={messages.workspace.derivedLabel}
+          >
             <BufferPanel
               analyses={analysisSnapshot.tasks}
               tasks={projectState.tasks}
@@ -440,7 +451,7 @@ function ObservationPanel({
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Trace</p>
-          <h2 id="observation-title">Observation</h2>
+          <h2 id="observation-title">{messages.panels.observation.title}</h2>
         </div>
         <span className="count-pill">{comparisons.length} rows</span>
       </div>
@@ -487,7 +498,7 @@ function PhaseTwoPanel({
 
   return (
     <article className="panel metric-panel phase-two-panel">
-      <p className="eyebrow">Phase 2</p>
+      <p className="eyebrow">{messages.panels.phase.phaseTwo}</p>
       <h2>Iterative RTA</h2>
       <div className="analysis-list">
         {analysisSnapshot.tasks.map((taskAnalysis) => {
@@ -524,7 +535,7 @@ function CodegenPreview({ files }: { files: GeneratedFile[] }) {
     <section className="panel codegen-preview" aria-labelledby="codegen-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Codegen</p>
+          <p className="eyebrow">{messages.panels.codegen.eyebrow}</p>
           <h2 id="codegen-title">FreeRTOS Preview</h2>
         </div>
         <span className="count-pill">{files.length} files</span>
@@ -647,7 +658,7 @@ function GanttChart({
     <svg
       className="gantt-svg"
       role="img"
-      aria-label="Periodic task timeline preview"
+      aria-label={messages.panels.gantt.ariaTimeline}
       viewBox={`0 0 ${GANTT_WIDTH} ${chartHeight}`}
     >
       {tasks.map((task, taskIndex) => (
@@ -775,7 +786,7 @@ function BufferPanel({
   );
   return (
     <article className="panel metric-panel">
-      <p className="eyebrow">Buffer</p>
+      <p className="eyebrow">{messages.panels.buffer.eyebrow}</p>
       <h2>Gauges</h2>
       <div className="gauge-list">
         {analyses.map((analysis) => {
@@ -824,9 +835,12 @@ function MemoryPanel({
 
   return (
     <article className="panel metric-panel">
-      <p className="eyebrow">Memory</p>
+      <p className="eyebrow">{messages.panels.memory.eyebrow}</p>
       <h2>Profile</h2>
-      <div className="memory-wave" aria-label="Memory profile waveform">
+      <div
+        className="memory-wave"
+        aria-label={messages.panels.memory.waveformLabel}
+      >
         {bars.map((bytes, index) => (
           <span
             key={`${bytes}-${index}`}
@@ -854,7 +868,7 @@ function ProblemsPanel({
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Validation</p>
-          <h2 id="problems-title">Problems</h2>
+          <h2 id="problems-title">{messages.panels.problems.title}</h2>
         </div>
       </div>
       <ul>
@@ -890,7 +904,10 @@ function PropertyPanel({
 }: PropertyPanelProps) {
   if (selectedTask === undefined) {
     return (
-      <aside className="panel property-panel" aria-label="Property Panel" />
+      <aside
+        className="panel property-panel"
+        aria-label={messages.panels.property.label}
+      />
     );
   }
 
@@ -899,7 +916,7 @@ function PropertyPanel({
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Selection</p>
-          <h2 id="property-title">Property Panel</h2>
+          <h2 id="property-title">{messages.panels.property.title}</h2>
         </div>
       </div>
       <label>
