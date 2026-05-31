@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 async function inputValueCount(page: Page, value: string) {
   return page
     .locator('input')
@@ -113,5 +115,27 @@ test('runs the Phase 2 aperiodic and codegen smoke flow', async ({ page }) => {
   await expect(page.getByText(/MotorDemoSporadicServerTask/)).toBeVisible();
   await expect
     .poll(() => measureDuration(page, 'chronoweave-codegen'))
+    .toBeLessThan(300);
+});
+
+test('runs the Phase 3 trace observation smoke flow', async ({ page }) => {
+  await page.goto('/');
+
+  await page
+    .getByTestId('trace-file-input')
+    .setInputFiles('test/fixtures/traces/motor-observation.csv');
+
+  await expect(
+    page.getByRole('heading', { name: 'Observation' })
+  ).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'ExtraMonitor' })).toBeVisible();
+  await expect(
+    page.getByText(/observed max execution 3.2 ms exceeds design WCET 3 ms/)
+  ).toBeVisible();
+  await expect(
+    page.getByText(/observed period 24 ms differs from design period 20 ms/)
+  ).toBeVisible();
+  await expect
+    .poll(() => measureDuration(page, 'chronoweave-trace-import'))
     .toBeLessThan(300);
 });

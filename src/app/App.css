@@ -339,6 +339,14 @@ th {
   white-space: pre;
 }
 
+.observation-panel table {
+  font-size: 0.84rem;
+}
+
+.observation-panel td:nth-child(2) {
+  font-weight: 700;
+}
+
 .problems-panel ul {
   list-style: none;
   padding: 0;

@@ -119,4 +119,64 @@ describe('App shell', () => {
     expect(screen.getByText('MotorDemo_tasks.c')).toBeInTheDocument();
     expect(screen.getByText(/MotorDemoSporadicServerTask/)).toBeInTheDocument();
   });
+
+  it('imports trace CSV and displays observation Problems', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    const traceText = `task,start_ms,end_ms
+ISR_Timer,0,0.05
+ISR_Timer,1,1.05
+MotorCtrl_X,0,3.2
+MotorCtrl_X,10,13.1
+SensorFusion,0,6.1
+SensorFusion,24,30
+ExtraMonitor,5,5.5
+ExtraMonitor,15,15.5
+`;
+    const file = new File([traceText], 'trace.csv', { type: 'text/csv' });
+    Object.defineProperty(file, 'text', {
+      value: async () => traceText
+    });
+
+    await user.upload(screen.getByTestId('trace-file-input'), file);
+
+    expect(
+      screen.getByRole('heading', { name: 'Observation' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('ExtraMonitor')).toBeInTheDocument();
+    expect(
+      screen.getByText(/observed max execution 3.2 ms exceeds design WCET 3 ms/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/observed period 24 ms differs from design period 20 ms/)
+    ).toBeInTheDocument();
+  });
+
+  it('shows invalid trace import Problems without replacing the design state', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    const traceText = `end_ms,task,start_ms
+0.2,ISR_Timer,0.3
+bad,MotorCtrl_X,1
+`;
+    const file = new File([traceText], 'invalid-trace.csv', {
+      type: 'text/csv'
+    });
+    Object.defineProperty(file, 'text', {
+      value: async () => traceText
+    });
+
+    await user.upload(screen.getByTestId('trace-file-input'), file);
+
+    expect(
+      screen.getByText(/end_ms must be greater than start_ms/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/non-numeric timestamps/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Observation' })
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByDisplayValue('MotorCtrl_X')).toHaveLength(2);
+  });
 });

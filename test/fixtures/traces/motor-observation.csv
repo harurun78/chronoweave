@@ -1,0 +1,10 @@
+task,start_ms,end_ms
+ISR_Timer,0,0.05
+MotorCtrl_X,0.2,3.4
+SensorFusion,0.4,6.5
+ExtraMonitor,5,5.5
+ISR_Timer,1,1.05
+MotorCtrl_X,10.2,13.3
+ExtraMonitor,15,15.5
+ISR_Timer,2,2.05
+SensorFusion,24.4,30.4

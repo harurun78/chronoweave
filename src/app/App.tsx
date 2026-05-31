@@ -1,6 +1,6 @@
 import { useDrag } from '@use-gesture/react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { type ChangeEvent, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { generateFreeRtosFiles } from '../codegen/freertos';
 import {
@@ -32,6 +32,9 @@ import {
   undoProjectStateAtom,
   updateProjectStateAtom
 } from '../state/projectState';
+import { compareObservedTasks } from '../trace/compare';
+import { parseTraceCsv } from '../trace/csvTrace';
+import type { ObservedTask, TaskObservationComparison } from '../trace/types';
 import './App.css';
 
 const GANTT_WIDTH = 720;
@@ -47,8 +50,11 @@ export function App() {
   const undoProjectState = useSetAtom(undoProjectStateAtom);
   const redoProjectState = useSetAtom(redoProjectStateAtom);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const traceInputRef = useRef<HTMLInputElement>(null);
   const [lastImportProblems, setLastImportProblems] = useState<Problem[]>([]);
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
+  const [observedTasks, setObservedTasks] = useState<ObservedTask[]>([]);
+  const [traceImportProblems, setTraceImportProblems] = useState<Problem[]>([]);
 
   useEffect(() => {
     performance.mark?.('chronoweave-project-state-redraw');
@@ -68,7 +74,19 @@ export function App() {
     projectState.tasks.find(
       (task) => task.id === projectState.selectedTaskId
     ) ?? projectState.tasks[0];
-  const problems = [...lastImportProblems, ...analysisSnapshot.problems];
+  const observationComparison = useMemo(
+    () =>
+      observedTasks.length === 0
+        ? { comparisons: [], problems: [] }
+        : compareObservedTasks(projectState, observedTasks),
+    [observedTasks, projectState]
+  );
+  const problems = [
+    ...lastImportProblems,
+    ...traceImportProblems,
+    ...analysisSnapshot.problems,
+    ...observationComparison.problems
+  ];
 
   function selectTask(taskId: string) {
     setProjectState((current) => ({ ...current, selectedTaskId: taskId }));
@@ -179,6 +197,32 @@ export function App() {
     setGeneratedFiles(files);
   }
 
+  async function importTraceCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+
+    if (file === undefined) {
+      return;
+    }
+
+    performance.mark?.('chronoweave-trace-import-start');
+    const result = parseTraceCsv(await file.text());
+    performance.mark?.('chronoweave-trace-import-end');
+    performance.measure?.(
+      'chronoweave-trace-import',
+      'chronoweave-trace-import-start',
+      'chronoweave-trace-import-end'
+    );
+
+    if (!result.ok) {
+      setTraceImportProblems(result.problems);
+      return;
+    }
+
+    setTraceImportProblems(result.problems);
+    setObservedTasks(result.observed_tasks);
+  }
+
   function exportProject(format: ProjectFileFormat) {
     performance.mark?.(`chronoweave-export-${format}-start`);
     const serializedProject = serializeProjectFile(projectState, format);
@@ -224,6 +268,8 @@ export function App() {
     }
 
     setLastImportProblems([]);
+    setTraceImportProblems([]);
+    setObservedTasks([]);
     setGeneratedFiles([]);
     performance.mark?.('chronoweave-project-state-commit-start');
     replaceProjectState(
@@ -247,6 +293,9 @@ export function App() {
           </button>
           <button type="button" onClick={() => importInputRef.current?.click()}>
             Import
+          </button>
+          <button type="button" onClick={() => traceInputRef.current?.click()}>
+            Import Trace CSV
           </button>
           <button type="button" onClick={() => exportProject('yaml')}>
             Export YAML
@@ -278,6 +327,14 @@ export function App() {
             type="file"
             accept=".yaml,.yml,.json,application/json,application/x-yaml,text/yaml"
             onChange={importProject}
+          />
+          <input
+            ref={traceInputRef}
+            className="visually-hidden"
+            data-testid="trace-file-input"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={importTraceCsv}
           />
         </div>
       </header>
@@ -351,6 +408,7 @@ export function App() {
           </section>
 
           <ProblemsPanel problems={problems} onSelectTask={selectTask} />
+          <ObservationPanel comparisons={observationComparison.comparisons} />
           <CodegenPreview files={generatedFiles} />
         </section>
 
@@ -363,6 +421,59 @@ export function App() {
       </main>
     </div>
   );
+}
+
+function ObservationPanel({
+  comparisons
+}: {
+  comparisons: TaskObservationComparison[];
+}) {
+  if (comparisons.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      className="panel observation-panel"
+      aria-labelledby="observation-title"
+    >
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Trace</p>
+          <h2 id="observation-title">Observation</h2>
+        </div>
+        <span className="count-pill">{comparisons.length} rows</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Design P</th>
+            <th>Observed P</th>
+            <th>Design WCET</th>
+            <th>Observed Max</th>
+          </tr>
+        </thead>
+        <tbody>
+          {comparisons.map((comparison) => (
+            <tr key={`${comparison.task_name}-${comparison.status}`}>
+              <td>{comparison.task_name}</td>
+              <td>{comparison.status}</td>
+              <td>{formatOptionalMs(comparison.design_period_ms)}</td>
+              <td>{formatOptionalMs(comparison.observed_period_ms)}</td>
+              <td>{formatOptionalMs(comparison.design_wcet_ms)}</td>
+              <td>{formatOptionalMs(comparison.observed_max_execution_ms)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function formatOptionalMs(value: number | undefined) {
+  return value === undefined ? '-' : `${value} ms`;
 }
 
 function PhaseTwoPanel({
