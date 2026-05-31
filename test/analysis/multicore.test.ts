@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeMulticoreDomain } from '../../src/analysis/multicore';
+import {
+  analyzeMulticoreDomain,
+  createCoreAnalysesWithStackOccupancy
+} from '../../src/analysis/multicore';
 import type { Domain, NormalizedTaskModel } from '../../src/model/project';
 
 const multicoreDomain: Domain = {
@@ -138,5 +141,70 @@ describe('multicore kernel', () => {
       ])
     );
     expect(result.taskAnalyses).toEqual([]);
+  });
+
+  it('computes per-core stack occupancy series for a hand-computed scenario', () => {
+    const tasks: NormalizedTaskModel[] = [
+      {
+        id: 'core0-a',
+        name: 'Core0A',
+        period_ms: 2,
+        wcet_ms: 1,
+        deadline_ms: 2,
+        priority_mode: 'auto',
+        stack: 'low',
+        domain_id: multicoreDomain.id,
+        core_index: 0
+      },
+      {
+        id: 'core0-b',
+        name: 'Core0B',
+        period_ms: 4,
+        wcet_ms: 2,
+        deadline_ms: 4,
+        priority_mode: 'auto',
+        stack: 'mid',
+        domain_id: multicoreDomain.id,
+        core_index: 0
+      },
+      {
+        id: 'core1-a',
+        name: 'Core1A',
+        period_ms: 2,
+        wcet_ms: 1,
+        deadline_ms: 2,
+        priority_mode: 'auto',
+        stack: 'high',
+        domain_id: multicoreDomain.id,
+        core_index: 1
+      }
+    ];
+
+    const coreAnalyses = createCoreAnalysesWithStackOccupancy({
+      domain: multicoreDomain,
+      tasks,
+      stackPresets: {
+        low: 100,
+        mid: 200,
+        high: 300
+      },
+      tickMs: 1,
+      sampleTickLimit: 8
+    });
+
+    expect(coreAnalyses).toMatchObject([
+      {
+        core_index: 0,
+        task_ids: ['core0-a', 'core0-b'],
+        stack_occupancy_series: [300, 200, 100, 0],
+        stack_peak_bytes: 300
+      },
+      {
+        core_index: 1,
+        task_ids: ['core1-a'],
+        stack_occupancy_series: [300, 0, 300, 0],
+        stack_peak_bytes: 300
+      }
+    ]);
   });
 });

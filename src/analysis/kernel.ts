@@ -13,6 +13,7 @@ import type {
 import { SPORADIC_SERVER_TASK_ID } from '../model/project';
 import { calculateScheduleLcm } from './lcm';
 import { validateChannels } from './channels';
+import { createCoreAnalysesWithStackOccupancy } from './multicore';
 import {
   BUFFER_WARNING_RATIO,
   ITERATIVE_RTA_MAX_ITERATIONS,
@@ -150,7 +151,8 @@ function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
       createDomainAnalysis(
         result.domain,
         result.projectState.tasks,
-        result.snapshot.tasks
+        result.snapshot.tasks,
+        result.projectState.global
       )
     )
   };
@@ -191,36 +193,29 @@ function createDomainProjectState(
 function createDomainAnalysis(
   domain: Domain,
   tasks: NormalizedTaskModel[],
-  analyses: TaskAnalysis[]
+  analyses: TaskAnalysis[],
+  global: ProjectState['global']
 ): DomainAnalysis {
   return {
     domain_id: domain.id,
     tasks: analyses,
-    cores: createCoreAnalyses(domain, tasks)
+    cores: createCoreAnalyses(domain, tasks, global)
   };
 }
 
 function createCoreAnalyses(
   domain: Domain,
-  tasks: NormalizedTaskModel[]
+  tasks: NormalizedTaskModel[],
+  global: ProjectState['global']
 ): CoreAnalysis[] {
-  const analyzedCoreCount = Math.min(domain.core_count, CORE_ANALYSIS_LIMIT);
-  const taskIdsByCore = Array.from(
-    { length: analyzedCoreCount },
-    () => [] as string[]
-  );
-
-  tasks.forEach((task) => {
-    const coreIndex = task.core_index ?? 0;
-    if (coreIndex >= 0 && coreIndex < analyzedCoreCount) {
-      taskIdsByCore[coreIndex].push(task.id);
-    }
+  return createCoreAnalysesWithStackOccupancy({
+    domain,
+    tasks,
+    stackPresets: global.stack_presets,
+    tickMs: global.tick_ms,
+    sampleTickLimit: LCM_TICK_WARNING_THRESHOLD,
+    coreLimit: CORE_ANALYSIS_LIMIT
   });
-
-  return taskIdsByCore.map((taskIds, coreIndex) => ({
-    core_index: coreIndex,
-    task_ids: taskIds
-  }));
 }
 
 function createDomainFanOutLimitProblems(domainCount: number): Problem[] {
