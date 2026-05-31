@@ -42,6 +42,7 @@ import { MemoryPanel } from '../ui/MemoryPanel';
 import { ObservationPanel } from '../ui/ObservationPanel';
 import { PhaseTwoPanel } from '../ui/PhaseTwoPanel';
 import { ProblemsPanel } from '../ui/ProblemsPanel';
+import { StochasticEventPanel } from '../ui/StochasticEventPanel';
 import { PropertyPanel } from '../ui/PropertyPanel';
 import { TaskTable } from '../ui/TaskTable';
 
@@ -224,6 +225,41 @@ export function App() {
     updateProjectState((current) => ({
       ...current,
       channels: current.channels.filter((channel) => channel.id !== channelId)
+    }));
+  }
+
+  function createStochasticEvent(draft: {
+    name: string;
+    domain_id: string;
+    mean_interarrival_ms: number;
+    std_dev_ms?: number;
+    consumer_task_id: string;
+  }) {
+    perf.mark('chronoweave-project-state-commit-start');
+    updateProjectState((current) => {
+      let index = current.stochastic_events.length + 1;
+      let id = `stochastic-${index}`;
+
+      while (current.stochastic_events.some((event) => event.id === id)) {
+        index += 1;
+        id = `stochastic-${index}`;
+      }
+
+      return {
+        ...current,
+        version: '0.3',
+        stochastic_events: [...current.stochastic_events, { id, ...draft }]
+      };
+    });
+  }
+
+  function deleteStochasticEvent(eventId: string) {
+    perf.mark('chronoweave-project-state-commit-start');
+    updateProjectState((current) => ({
+      ...current,
+      stochastic_events: current.stochastic_events.filter(
+        (event) => event.id !== eventId
+      )
     }));
   }
 
@@ -419,6 +455,13 @@ export function App() {
             tasks={projectState.tasks}
             onCreateChannel={createChannel}
             onDeleteChannel={deleteChannel}
+          />
+          <StochasticEventPanel
+            domains={projectState.domains}
+            events={projectState.stochastic_events}
+            tasks={projectState.tasks}
+            onCreateEvent={createStochasticEvent}
+            onDeleteEvent={deleteStochasticEvent}
           />
           <ObservationPanel comparisons={observationComparison.comparisons} />
           <CodegenPreview files={generatedFiles} />
