@@ -1,5 +1,8 @@
 import type {
   AnalysisSnapshot,
+  CoreAnalysis,
+  Domain,
+  DomainAnalysis,
   MemoryProfile,
   NormalizedTaskModel,
   Problem,
@@ -18,9 +21,28 @@ import {
 import { calculateEffectivePriorities } from './priority';
 import { createTickGridProblems, millisecondsToTicks } from './time';
 
+const DOMAIN_ANALYSIS_LIMIT = 64;
+const CORE_ANALYSIS_LIMIT = 64;
+
 export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
   performance.mark?.('chronoweave-analysis-start');
 
+  const snapshot =
+    projectState.domains.length > 1
+      ? analyzeProjectByDomain(projectState)
+      : analyzeProjectScope(projectState);
+
+  performance.mark?.('chronoweave-analysis-end');
+  performance.measure?.(
+    'chronoweave-analysis-duration',
+    'chronoweave-analysis-start',
+    'chronoweave-analysis-end'
+  );
+
+  return snapshot;
+}
+
+function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
   const schedulingActors = createSchedulingActors(projectState);
   const lcm = calculateScheduleLcm(
     schedulingActors,
@@ -53,13 +75,6 @@ export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
     ...memoryProfile.problems
   ];
 
-  performance.mark?.('chronoweave-analysis-end');
-  performance.measure?.(
-    'chronoweave-analysis-duration',
-    'chronoweave-analysis-start',
-    'chronoweave-analysis-end'
-  );
-
   return {
     lcm_ticks: lcm.lcm_ticks,
     lcm_ms: lcm.lcm_ms,
@@ -69,6 +84,229 @@ export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
     sporadic_server: sporadicServerAnalysis,
     problems
   };
+}
+
+function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
+  const analyzedDomains = projectState.domains.slice(0, DOMAIN_ANALYSIS_LIMIT);
+  const domainResults = analyzedDomains.map((domain) => {
+    const domainProjectState = createDomainProjectState(projectState, domain);
+    return {
+      domain,
+      projectState: domainProjectState,
+      snapshot: analyzeProjectScope(domainProjectState)
+    };
+  });
+  const taskAnalysisById = new Map(
+    domainResults.flatMap((result) =>
+      result.snapshot.tasks.map((task) => [task.task_id, task] as const)
+    )
+  );
+  const tasks = projectState.tasks.flatMap((task) => {
+    const analysis = taskAnalysisById.get(task.id);
+    return analysis === undefined ? [] : [analysis];
+  });
+  const sporadicServerDomainId = projectState.sporadic_server?.domain_id;
+  const sporadicServerAnalysis = domainResults.find(
+    (result) => result.domain.id === sporadicServerDomainId
+  )?.snapshot.sporadic_server;
+  const memoryProfile = mergeMemoryProfiles(
+    domainResults.map((result) => result.snapshot.memory_profile),
+    projectState.global.ram_capacity
+  );
+
+  return {
+    lcm_ticks: Math.max(
+      0,
+      ...domainResults.map((result) => result.snapshot.lcm_ticks)
+    ),
+    lcm_ms: Math.max(
+      0,
+      ...domainResults.map((result) => result.snapshot.lcm_ms)
+    ),
+    tasks,
+    aperiodic_capacity_percent: mergeAperiodicCapacityPercent(
+      domainResults.map((result) => result.snapshot)
+    ),
+    memory_profile: memoryProfile,
+    sporadic_server: sporadicServerAnalysis,
+    problems: [
+      ...createDomainFanOutLimitProblems(projectState.domains.length),
+      ...domainResults.flatMap((result) => [
+        ...tagDomainProblems(result.snapshot.problems, result.domain.id),
+        ...createDomainCoreLimitProblems(result.domain)
+      ]),
+      ...createMergedMemoryProfileProblems(memoryProfile)
+    ],
+    domains: domainResults.map((result) =>
+      createDomainAnalysis(
+        result.domain,
+        result.projectState.tasks,
+        result.snapshot.tasks
+      )
+    )
+  };
+}
+
+function createDomainProjectState(
+  projectState: ProjectState,
+  domain: Domain
+): ProjectState {
+  const tasks = projectState.tasks.filter(
+    (task) => task.domain_id === domain.id
+  );
+  const selectedTaskId = tasks.some(
+    (task) => task.id === projectState.selectedTaskId
+  )
+    ? projectState.selectedTaskId
+    : tasks[0]?.id;
+
+  return {
+    ...projectState,
+    domains: [domain],
+    tasks,
+    aperiodic_tasks: projectState.aperiodic_tasks.filter(
+      (task) => task.domain_id === domain.id
+    ),
+    sporadic_server:
+      projectState.sporadic_server?.domain_id === domain.id
+        ? projectState.sporadic_server
+        : undefined,
+    stochastic_events: projectState.stochastic_events.filter(
+      (event) => event.domain_id === domain.id
+    ),
+    selectedTaskId
+  };
+}
+
+function createDomainAnalysis(
+  domain: Domain,
+  tasks: NormalizedTaskModel[],
+  analyses: TaskAnalysis[]
+): DomainAnalysis {
+  return {
+    domain_id: domain.id,
+    tasks: analyses,
+    cores: createCoreAnalyses(domain, tasks)
+  };
+}
+
+function createCoreAnalyses(
+  domain: Domain,
+  tasks: NormalizedTaskModel[]
+): CoreAnalysis[] {
+  const analyzedCoreCount = Math.min(domain.core_count, CORE_ANALYSIS_LIMIT);
+  const taskIdsByCore = Array.from(
+    { length: analyzedCoreCount },
+    () => [] as string[]
+  );
+
+  tasks.forEach((task) => {
+    const coreIndex = task.core_index ?? 0;
+    if (coreIndex >= 0 && coreIndex < analyzedCoreCount) {
+      taskIdsByCore[coreIndex].push(task.id);
+    }
+  });
+
+  return taskIdsByCore.map((taskIds, coreIndex) => ({
+    core_index: coreIndex,
+    task_ids: taskIds
+  }));
+}
+
+function createDomainFanOutLimitProblems(domainCount: number): Problem[] {
+  if (domainCount <= DOMAIN_ANALYSIS_LIMIT) {
+    return [];
+  }
+
+  return [
+    {
+      id: 'analysis-domain-count-too-large',
+      level: 'error',
+      message: `Project declares ${domainCount} domains; Chronoweave analyzes the first ${DOMAIN_ANALYSIS_LIMIT} domains to avoid excessive analysis output.`,
+      source: 'analysis'
+    }
+  ];
+}
+
+function createDomainCoreLimitProblems(domain: Domain): Problem[] {
+  if (domain.core_count <= CORE_ANALYSIS_LIMIT) {
+    return [];
+  }
+
+  return [
+    {
+      id: `analysis-${domain.id}-core-count-too-large`,
+      level: 'error',
+      message: `${domain.name}: Domain declares ${domain.core_count} cores; Chronoweave reports the first ${CORE_ANALYSIS_LIMIT} core analysis rows to avoid excessive analysis output.`,
+      domain_id: domain.id,
+      source: 'analysis'
+    }
+  ];
+}
+
+function mergeAperiodicCapacityPercent(snapshots: AnalysisSnapshot[]): number {
+  if (snapshots.length === 0) {
+    return 0;
+  }
+
+  return Math.min(
+    ...snapshots.map((snapshot) => snapshot.aperiodic_capacity_percent)
+  );
+}
+
+function mergeMemoryProfiles(
+  profiles: MemoryProfile[],
+  capacityBytes: number | undefined
+): MemoryProfile {
+  const maxSeriesLength = Math.max(
+    0,
+    ...profiles.map((profile) => profile.series.length)
+  );
+  const series = Array.from({ length: maxSeriesLength }, (_, sampleIndex) =>
+    profiles.reduce(
+      (sum, profile) => sum + (profile.series[sampleIndex] ?? 0),
+      0
+    )
+  );
+
+  return {
+    series,
+    peak_bytes: Math.max(0, ...series),
+    capacity_bytes: capacityBytes
+  };
+}
+
+function createMergedMemoryProfileProblems(profile: MemoryProfile): Problem[] {
+  if (
+    profile.capacity_bytes === undefined ||
+    profile.capacity_bytes <= 0 ||
+    profile.peak_bytes / profile.capacity_bytes < RAM_WARNING_RATIO
+  ) {
+    return [];
+  }
+
+  return [
+    {
+      id: 'analysis-ram-capacity-warning',
+      level: 'warning',
+      message: `Merged peak stack usage ${profile.peak_bytes} bytes is at or above 90% of RAM capacity ${profile.capacity_bytes} bytes.`,
+      source: 'analysis'
+    }
+  ];
+}
+
+function tagDomainProblems(problems: Problem[], domainId: string): Problem[] {
+  return problems.map((problem) => ({
+    ...problem,
+    id: createDomainProblemId(problem.id, domainId),
+    domain_id: domainId
+  }));
+}
+
+function createDomainProblemId(problemId: string, domainId: string): string {
+  return problemId.startsWith('analysis-')
+    ? `analysis-${domainId}-${problemId.slice('analysis-'.length)}`
+    : `${domainId}-${problemId}`;
 }
 
 function createSchedulingActors(
