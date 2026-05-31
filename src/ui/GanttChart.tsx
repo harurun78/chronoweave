@@ -4,6 +4,9 @@ import { useRef } from 'react';
 import type { NormalizedTaskModel, TaskAnalysis } from '../model/project';
 import { GANTT_WIDTH, ROW_HEIGHT } from './ganttLayout';
 
+const WCET_MIN_MS = 0.05;
+const WCET_STEP_MS = 0.05;
+
 interface GanttChartProps {
   analyses: TaskAnalysis[];
   lcmMs: number;
@@ -130,6 +133,29 @@ function GanttTaskRow({
                 {...bind()}
                 className="gantt-handle"
                 data-testid={`wcet-handle-${task.id}`}
+                role="slider"
+                tabIndex={0}
+                aria-label={`WCET handle for ${task.name}`}
+                aria-valuemin={WCET_MIN_MS}
+                aria-valuemax={lcmMs}
+                aria-valuenow={task.wcet_ms}
+                aria-orientation="horizontal"
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+                    return;
+                  }
+                  event.preventDefault();
+                  const delta =
+                    event.key === 'ArrowRight' ? WCET_STEP_MS : -WCET_STEP_MS;
+                  const next = Math.max(
+                    WCET_MIN_MS,
+                    Math.round((task.wcet_ms + delta) * 100) / 100
+                  );
+                  if (next !== task.wcet_ms) {
+                    performance.mark?.('chronoweave-wcet-keyboard');
+                    onUpdateTask(task.id, { wcet_ms: next });
+                  }
+                }}
                 x={x + Math.max(4, barWidth * 0.8) - 4}
                 y={y}
                 width="8"
