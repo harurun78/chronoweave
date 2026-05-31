@@ -1,4 +1,5 @@
 import type { AnalysisSnapshot } from '../model/project';
+import { messages } from '../i18n/messages.en';
 
 interface MemoryPanelProps {
   analysisSnapshot: AnalysisSnapshot;
@@ -11,9 +12,12 @@ export function MemoryPanel({ analysisSnapshot }: MemoryPanelProps) {
 
   return (
     <article className="panel metric-panel">
-      <p className="eyebrow">Memory</p>
+      <p className="eyebrow">{messages.panels.memory.eyebrow}</p>
       <h2>Profile</h2>
-      <div className="memory-wave" aria-label="Memory profile waveform">
+      <div
+        className="memory-wave"
+        aria-label={messages.panels.memory.waveformLabel}
+      >
         {bars.map((bytes, index) => (
           <span
             key={`${bytes}-${index}`}

@@ -1,4 +1,5 @@
 import type { Problem } from '../model/project';
+import { messages } from '../i18n/messages.en';
 
 interface ProblemsPanelProps {
   problems: Problem[];
@@ -16,7 +17,7 @@ export function ProblemsPanel({
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Validation</p>
-          <h2 id="problems-title">Problems</h2>
+          <h2 id="problems-title">{messages.panels.problems.title}</h2>
         </div>
       </div>
       <ul>

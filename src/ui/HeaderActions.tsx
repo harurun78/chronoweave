@@ -1,6 +1,7 @@
 import type { ChangeEvent, RefObject } from 'react';
 
 import type { ProjectFileFormat } from '../io/projectFileIo';
+import { messages } from '../i18n/messages.en';
 
 interface HeaderActionsProps {
   canRedo: boolean;
@@ -32,33 +33,33 @@ export function HeaderActions({
   onUndo
 }: HeaderActionsProps) {
   return (
-    <div className="header-actions" aria-label="Project actions">
+    <div className="header-actions" aria-label={messages.projectActions.label}>
       <button type="button" onClick={onLoadSampleMotor}>
-        Motor Control 1-axis
+        {messages.projectActions.loadSampleMotor}
       </button>
       <button type="button" onClick={onLoadSampleAperiodic}>
-        Motor Control + Aperiodic
+        {messages.projectActions.loadSampleAperiodic}
       </button>
       <button type="button" onClick={() => importInputRef.current?.click()}>
-        Import
+        {messages.projectActions.import}
       </button>
       <button type="button" onClick={() => traceInputRef.current?.click()}>
-        Import Trace CSV
+        {messages.projectActions.importTraceCsv}
       </button>
       <button type="button" onClick={() => onExport('yaml')}>
-        Export YAML
+        {messages.projectActions.exportYaml}
       </button>
       <button type="button" onClick={() => onExport('json')}>
         Export JSON
       </button>
       <button type="button" onClick={onGenerateFreeRtos}>
-        Generate FreeRTOS
+        {messages.projectActions.generateFreeRtos}
       </button>
       <button type="button" disabled={!canUndo} onClick={onUndo}>
-        Undo
+        {messages.projectActions.undo}
       </button>
       <button type="button" disabled={!canRedo} onClick={onRedo}>
-        Redo
+        {messages.projectActions.redo}
       </button>
       <input
         ref={importInputRef}

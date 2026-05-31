@@ -1,4 +1,5 @@
 import type { NormalizedTaskModel, TaskAnalysis } from '../model/project';
+import { messages } from '../i18n/messages.en';
 
 interface BufferPanelProps {
   analyses: TaskAnalysis[];
@@ -11,7 +12,7 @@ export function BufferPanel({ analyses, tasks }: BufferPanelProps) {
   );
   return (
     <article className="panel metric-panel">
-      <p className="eyebrow">Buffer</p>
+      <p className="eyebrow">{messages.panels.buffer.eyebrow}</p>
       <h2>Gauges</h2>
       <div className="gauge-list">
         {analyses.map((analysis) => {
