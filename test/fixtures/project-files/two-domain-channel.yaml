@@ -1,0 +1,41 @@
+version: '0.3'
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+  ram_capacity: 65536
+domains:
+  - id: rtos
+    name: RTOS Domain
+    kind: rtos
+    core_count: 1
+  - id: linux
+    name: Linux Domain
+    kind: linux
+    core_count: 1
+tasks:
+  - id: control-loop
+    name: ControlLoop
+    period_ms: 10
+    wcet_ms: 2
+    deadline_ms: 10
+    priority_mode: auto
+    stack: mid
+    domain_id: rtos
+  - id: telemetry-publisher
+    name: TelemetryPublisher
+    period_ms: 20
+    wcet_ms: 3
+    deadline_ms: 20
+    priority_mode: auto
+    stack: mid
+    domain_id: linux
+channels:
+  - id: channel-1
+    producer_task_id: telemetry-publisher
+    consumer_task_id: control-loop
+    transport: mailbox
+    latency_budget_ms: 5
+stochastic_events: []
