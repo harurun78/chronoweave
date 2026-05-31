@@ -70,6 +70,7 @@ function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
     ...lcm.problems,
     ...tickGridProblems,
     ...priority.problems,
+    ...createTaskPlacementProblems(projectState),
     ...createTaskAnalysisProblems(projectState.tasks, taskAnalyses),
     ...createSporadicServerProblems(projectState, sporadicServerAnalysis),
     ...memoryProfile.problems
@@ -130,6 +131,7 @@ function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
     memory_profile: memoryProfile,
     sporadic_server: sporadicServerAnalysis,
     problems: [
+      ...createTaskWithoutDomainProblems(projectState),
       ...createDomainFanOutLimitProblems(projectState.domains.length),
       ...domainResults.flatMap((result) => [
         ...tagDomainProblems(result.snapshot.problems, result.domain.id),
@@ -242,6 +244,89 @@ function createDomainCoreLimitProblems(domain: Domain): Problem[] {
       source: 'analysis'
     }
   ];
+}
+
+function createTaskWithoutDomainProblems(
+  projectState: ProjectState
+): Problem[] {
+  const domainIds = new Set(projectState.domains.map((domain) => domain.id));
+
+  return projectState.tasks.flatMap((task) => {
+    if (task.domain_id.trim() === '') {
+      return [
+        {
+          id: `analysis-${task.id}-missing-domain`,
+          level: 'error',
+          message: `${task.name}: Domain assignment is required.`,
+          task_id: task.id,
+          source: 'analysis'
+        }
+      ];
+    }
+
+    if (domainIds.has(task.domain_id)) {
+      return [];
+    }
+
+    return [
+      {
+        id: `analysis-${task.id}-unknown-domain`,
+        level: 'error',
+        message: `${task.name}: Assigned domain '${task.domain_id}' does not exist.`,
+        task_id: task.id,
+        source: 'analysis'
+      }
+    ];
+  });
+}
+
+function createTaskPlacementProblems(projectState: ProjectState): Problem[] {
+  const domainById = new Map(
+    projectState.domains.map((domain) => [domain.id, domain] as const)
+  );
+
+  return projectState.tasks.flatMap((task) => {
+    if (task.domain_id.trim() === '') {
+      return [
+        {
+          id: `analysis-${task.id}-missing-domain`,
+          level: 'error',
+          message: `${task.name}: Domain assignment is required.`,
+          task_id: task.id,
+          source: 'analysis'
+        }
+      ];
+    }
+
+    const domain = domainById.get(task.domain_id);
+    if (domain === undefined) {
+      return [
+        {
+          id: `analysis-${task.id}-unknown-domain`,
+          level: 'error',
+          message: `${task.name}: Assigned domain '${task.domain_id}' does not exist.`,
+          task_id: task.id,
+          source: 'analysis'
+        }
+      ];
+    }
+
+    const coreIndex = task.core_index ?? 0;
+    if (coreIndex < 0 || coreIndex >= domain.core_count) {
+      return [
+        {
+          id: `analysis-${task.id}-core-index-out-of-range`,
+          level: 'error',
+          message: `${task.name}: Core index ${coreIndex} must be within 0-${domain.core_count - 1} for domain ${domain.name}.`,
+          task_id: task.id,
+          domain_id: domain.id,
+          source: 'analysis'
+        }
+      ];
+    }
+
+    return [];
+  });
 }
 
 function mergeAperiodicCapacityPercent(snapshots: AnalysisSnapshot[]): number {
