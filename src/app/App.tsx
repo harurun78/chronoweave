@@ -42,6 +42,7 @@ import { PropertyPanel } from '../ui/PropertyPanel';
 import { TaskTable } from '../ui/TaskTable';
 
 import './App.css';
+import { messages } from '../i18n/messages.en';
 
 export function App() {
   const [projectState, setProjectState] = useAtom(projectStateAtom);
@@ -255,8 +256,8 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">RTOS Task Design Kernel</p>
-          <h1>Chronoweave</h1>
+          <p className="eyebrow">{messages.app.eyebrow}</p>
+          <h1>{messages.app.title}</h1>
         </div>
         <HeaderActions
           canRedo={history.future.length > 0}
@@ -278,26 +279,26 @@ export function App() {
         <section className="panel task-panel" aria-labelledby="task-list-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">ProjectState</p>
-              <h2 id="task-list-title">Task List</h2>
+              <p className="eyebrow">{messages.panels.taskList.eyebrow}</p>
+              <h2 id="task-list-title">{messages.panels.taskList.title}</h2>
             </div>
             <span className="count-pill">
-              {projectState.tasks.length} tasks
+              {projectState.tasks.length} {messages.panels.taskList.countSuffix}
             </span>
           </div>
           <div className="panel-actions">
             <button type="button" onClick={addTask}>
-              Add
+              {messages.panels.taskList.add}
             </button>
             <button type="button" onClick={duplicateSelectedTask}>
-              Duplicate
+              {messages.panels.taskList.duplicate}
             </button>
             <button
               type="button"
               onClick={deleteSelectedTask}
               disabled={projectState.tasks.length <= 1}
             >
-              Delete
+              {messages.panels.taskList.delete}
             </button>
           </div>
           <TaskTable
@@ -309,15 +310,19 @@ export function App() {
           />
         </section>
 
-        <section className="center-stack" aria-label="Analysis workspace">
+        <section
+          className="center-stack"
+          aria-label={messages.workspace.analysisLabel}
+        >
           <section className="panel gantt-panel" aria-labelledby="gantt-title">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">AnalysisSnapshot</p>
-                <h2 id="gantt-title">Gantt</h2>
+                <p className="eyebrow">{messages.panels.gantt.eyebrow}</p>
+                <h2 id="gantt-title">{messages.panels.gantt.title}</h2>
               </div>
               <span className="count-pill">
-                LCM {analysisSnapshot.lcm_ms} ms
+                {messages.panels.gantt.lcmPrefix} {analysisSnapshot.lcm_ms}{' '}
+                {messages.panels.gantt.lcmSuffix}
               </span>
             </div>
             <GanttChart
@@ -330,7 +335,10 @@ export function App() {
             />
           </section>
 
-          <section className="metric-grid" aria-label="Derived panels">
+          <section
+            className="metric-grid"
+            aria-label={messages.workspace.derivedLabel}
+          >
             <BufferPanel
               analyses={analysisSnapshot.tasks}
               tasks={projectState.tasks}

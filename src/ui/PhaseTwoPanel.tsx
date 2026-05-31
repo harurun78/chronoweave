@@ -1,4 +1,5 @@
 import type { AnalysisSnapshot, ProjectState } from '../model/project';
+import { messages } from '../i18n/messages.en';
 
 interface PhaseTwoPanelProps {
   analysisSnapshot: AnalysisSnapshot;
@@ -13,7 +14,7 @@ export function PhaseTwoPanel({
 
   return (
     <article className="panel metric-panel phase-two-panel">
-      <p className="eyebrow">Phase 2</p>
+      <p className="eyebrow">{messages.panels.phase.phaseTwo}</p>
       <h2>Iterative RTA</h2>
       <div className="analysis-list">
         {analysisSnapshot.tasks.map((taskAnalysis) => {

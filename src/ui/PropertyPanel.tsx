@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import type { NormalizedTaskModel } from '../model/project';
 import { NumberInput, StackSelect } from './inputs';
+import { messages } from '../i18n/messages.en';
 
 interface PropertyPanelProps {
   selectedTask?: NormalizedTaskModel;
@@ -19,7 +20,10 @@ export function PropertyPanel({
 }: PropertyPanelProps) {
   if (selectedTask === undefined) {
     return (
-      <aside className="panel property-panel" aria-label="Property Panel" />
+      <aside
+        className="panel property-panel"
+        aria-label={messages.panels.property.label}
+      />
     );
   }
 
@@ -28,7 +32,7 @@ export function PropertyPanel({
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Selection</p>
-          <h2 id="property-title">Property Panel</h2>
+          <h2 id="property-title">{messages.panels.property.title}</h2>
         </div>
       </div>
       <label>

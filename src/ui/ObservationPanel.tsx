@@ -1,5 +1,6 @@
 import type { TaskObservationComparison } from '../trace/types';
 import { formatOptionalMs } from './formatters';
+import { messages } from '../i18n/messages.en';
 
 interface ObservationPanelProps {
   comparisons: TaskObservationComparison[];
@@ -18,7 +19,7 @@ export function ObservationPanel({ comparisons }: ObservationPanelProps) {
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Trace</p>
-          <h2 id="observation-title">Observation</h2>
+          <h2 id="observation-title">{messages.panels.observation.title}</h2>
         </div>
         <span className="count-pill">{comparisons.length} rows</span>
       </div>

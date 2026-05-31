@@ -3,6 +3,7 @@ import { useRef } from 'react';
 
 import type { NormalizedTaskModel, TaskAnalysis } from '../model/project';
 import { GANTT_WIDTH, ROW_HEIGHT } from './ganttLayout';
+import { messages } from '../i18n/messages.en';
 
 const WCET_MIN_MS = 0.05;
 const WCET_STEP_MS = 0.05;
@@ -31,7 +32,7 @@ export function GanttChart({
     <svg
       className="gantt-svg"
       role="img"
-      aria-label="Periodic task timeline preview"
+      aria-label={messages.panels.gantt.ariaTimeline}
       viewBox={`0 0 ${GANTT_WIDTH} ${chartHeight}`}
     >
       {tasks.map((task, taskIndex) => (
