@@ -8,13 +8,15 @@ import type {
   TaskAnalysis
 } from '../model/project';
 import { SPORADIC_SERVER_TASK_ID } from '../model/project';
-import { calculateScheduleLcm, LCM_TICK_WARNING_THRESHOLD } from './lcm';
+import { calculateScheduleLcm } from './lcm';
+import {
+  BUFFER_WARNING_RATIO,
+  ITERATIVE_RTA_MAX_ITERATIONS,
+  LCM_TICK_WARNING_THRESHOLD,
+  RAM_WARNING_RATIO
+} from './config';
 import { calculateEffectivePriorities } from './priority';
 import { createTickGridProblems, millisecondsToTicks } from './time';
-
-export const BUFFER_WARNING_RATIO = 0.1;
-export const RAM_WARNING_RATIO = 0.9;
-export const ITERATIVE_RTA_MAX_ITERATIONS = 50;
 
 export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
   performance.mark?.('chronoweave-analysis-start');
@@ -486,3 +488,10 @@ function roundMs(value: number): number {
 function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
+
+export {
+  BUFFER_WARNING_RATIO,
+  ITERATIVE_RTA_MAX_ITERATIONS,
+  LCM_TICK_WARNING_THRESHOLD,
+  RAM_WARNING_RATIO
+};

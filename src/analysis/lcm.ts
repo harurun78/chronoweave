@@ -1,7 +1,6 @@
 import type { NormalizedTaskModel, Problem } from '../model/project';
 import { millisecondsToTicks } from './time';
-
-export const LCM_TICK_WARNING_THRESHOLD = 10_000;
+import { LCM_TICK_WARNING_THRESHOLD } from './config';
 
 export interface LcmResult {
   lcm_ticks: number;
@@ -60,3 +59,5 @@ function lcm(left: number, right: number): number {
 
   return Math.abs((left / gcd(left, right)) * right);
 }
+
+export { LCM_TICK_WARNING_THRESHOLD };
