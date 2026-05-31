@@ -80,6 +80,26 @@ describe('App shell', () => {
     expect(screen.getByLabelText('SensorFusionFast name')).toBeInTheDocument();
   });
 
+  it('keeps task editing scoped to the active domain', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    await user.click(screen.getByRole('button', { name: 'Add domain' }));
+
+    expect(screen.getByRole('tab', { name: /Domain 2/ })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(screen.queryByLabelText('WCET ms')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(screen.getByLabelText('Task_4 wcet')).toBeInTheDocument();
+    expect(screen.getByLabelText('WCET ms')).toHaveValue(1);
+  });
+
   it('focuses the related task when a Problem is clicked', async () => {
     const user = userEvent.setup();
     renderApp();

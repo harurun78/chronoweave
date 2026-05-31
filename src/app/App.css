@@ -244,6 +244,45 @@ textarea {
   margin-bottom: var(--space-5);
 }
 
+.domain-tabs {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.domain-tab-list {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+.domain-tab {
+  display: grid;
+  gap: 1px;
+  align-content: center;
+  min-width: 132px;
+  min-height: 46px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.domain-tab[aria-selected='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-pill-bg);
+}
+
+.domain-tab small {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}
+
+.domain-tab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .count-pill {
   border-radius: var(--radius-pill);
   background: var(--color-pill-bg);
