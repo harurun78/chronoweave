@@ -378,6 +378,7 @@ export function App() {
         </section>
 
         <PropertyPanel
+          domains={projectState.domains}
           selectedTask={selectedTask}
           ramCapacity={projectState.global.ram_capacity}
           nameInputRef={propertyNameInputRef}

@@ -100,6 +100,56 @@ describe('App shell', () => {
     expect(screen.getByLabelText('WCET ms')).toHaveValue(1);
   });
 
+  it('blocks placement save when domain is missing', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    await user.selectOptions(screen.getByLabelText('Domain'), '');
+    await user.click(screen.getByRole('button', { name: 'Save placement' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Domain is required.');
+    expect(screen.getByLabelText('Name')).toHaveValue('MotorCtrl_X');
+  });
+
+  it('surfaces a Problem when imported core_index is outside domain core_count', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    const invalidCoreProject = `version: '0.3'
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+domains:
+  - id: default
+    name: Default RTOS
+    kind: rtos
+    core_count: 1
+tasks:
+  - id: task_a
+    name: TaskA
+    period_ms: 10
+    wcet_ms: 1
+    stack: low
+    domain_id: default
+    core_index: 2
+`;
+    const file = new File([invalidCoreProject], 'invalid-core.yaml', {
+      type: 'application/x-yaml'
+    });
+    Object.defineProperty(file, 'text', {
+      value: async () => invalidCoreProject
+    });
+
+    await user.upload(screen.getByTestId('project-file-input'), file);
+
+    expect(
+      await screen.findByText(/Core index 2 must be within 0-0/)
+    ).toBeInTheDocument();
+  });
+
   it('focuses the related task when a Problem is clicked', async () => {
     const user = userEvent.setup();
     renderApp();
