@@ -8,7 +8,7 @@
 
 **Input**: User description: "Move Chronoweave into Phase 2 by adding aperiodic task input, Sporadic Server budget and period, iterative RTA, and a FreeRTOS code generation plugin while preserving Phase 1 ProjectFile compatibility."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Phase 1 files still load (Priority: P1)
 
@@ -80,7 +80,7 @@ As an embedded engineer, I want a FreeRTOS generation plugin to produce source/h
 - Iterative RTA does not converge before the iteration limit.
 - Generated code names contain spaces or unsupported characters.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -99,7 +99,7 @@ As an embedded engineer, I want a FreeRTOS generation plugin to produce source/h
 - **FR-013**: System MUST generate deterministic FreeRTOS file names and symbol names from ProjectFile inputs.
 - **FR-014**: System MUST keep trace import, multicore scheduling, and heterogeneous SoC modeling out of Phase 2 scope.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **ProjectFile v0.2**: Backward-compatible persistence contract adding Phase 2 optional fields.
 - **AperiodicTaskFile**: Non-periodic execution demand served by Sporadic Server.
@@ -109,7 +109,7 @@ As an embedded engineer, I want a FreeRTOS generation plugin to produce source/h
 - **CodegenSettings**: Plugin and naming configuration for generation modules.
 - **GeneratedFile**: Deterministic code generation output with path and text content.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

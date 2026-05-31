@@ -30,13 +30,13 @@ Extend Chronoweave beyond periodic-only Phase 1 by adding ProjectFile `0.2`, ape
 
 ## Constitution Check
 
-| Principle | Check | Status |
-| --- | --- | --- |
-| Interactive Design Loop First | Phase 2 derived results must still flow from ProjectState to AnalysisSnapshot | PASS |
-| ProjectFile As Stable Intermediate Representation | `0.1` remains valid; `0.2` is additive | PASS |
-| Analysis Honesty | Approximate RTA remains visible and iterative RTA is distinguished | PASS |
-| Responsive UI Is A Requirement | Iterative RTA has bounded iteration and can surface Problems | PASS |
-| Modular Boundaries For Future Phases | FreeRTOS generation is a pure module/plugin | PASS |
+| Principle                                         | Check                                                                         | Status |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- | ------ |
+| Interactive Design Loop First                     | Phase 2 derived results must still flow from ProjectState to AnalysisSnapshot | PASS   |
+| ProjectFile As Stable Intermediate Representation | `0.1` remains valid; `0.2` is additive                                        | PASS   |
+| Analysis Honesty                                  | Approximate RTA remains visible and iterative RTA is distinguished            | PASS   |
+| Responsive UI Is A Requirement                    | Iterative RTA has bounded iteration and can surface Problems                  | PASS   |
+| Modular Boundaries For Future Phases              | FreeRTOS generation is a pure module/plugin                                   | PASS   |
 
 ## Project Structure
 
