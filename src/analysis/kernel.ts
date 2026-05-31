@@ -4,6 +4,7 @@ import type {
   Domain,
   DomainAnalysis,
   MemoryProfile,
+  NormalizedAperiodicTaskModel,
   NormalizedTaskModel,
   Problem,
   ProjectState,
@@ -15,6 +16,10 @@ import { calculateScheduleLcm } from './lcm';
 import { validateChannels } from './channels';
 import { createCoreAnalysesWithStackOccupancy } from './multicore';
 import {
+  stochasticToAperiodic,
+  type StochasticAdapterResult
+} from './stochastic';
+import {
   BUFFER_WARNING_RATIO,
   ITERATIVE_RTA_MAX_ITERATIONS,
   LCM_TICK_WARNING_THRESHOLD,
@@ -25,6 +30,11 @@ import { createTickGridProblems, millisecondsToTicks } from './time';
 
 const DOMAIN_ANALYSIS_LIMIT = 64;
 const CORE_ANALYSIS_LIMIT = 64;
+const EMPTY_STOCHASTIC_RESULT: StochasticAdapterResult = {
+  syntheticAperiodicTasks: [],
+  analyses: [],
+  problems: []
+};
 
 export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
   performance.mark?.('chronoweave-analysis-start');
@@ -44,26 +54,39 @@ export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
   return snapshot;
 }
 
-function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
+function analyzeProjectScope(
+  projectState: ProjectState,
+  stochasticResult?: StochasticAdapterResult
+): AnalysisSnapshot {
+  const resolvedStochasticResult =
+    stochasticResult ??
+    stochasticToAperiodic(projectState.stochastic_events, projectState.tasks);
+  const analysisProjectState: ProjectState = {
+    ...projectState,
+    aperiodic_tasks: [
+      ...projectState.aperiodic_tasks,
+      ...resolvedStochasticResult.syntheticAperiodicTasks
+    ]
+  };
   const channelValidation = validateChannels(projectState);
-  const schedulingActors = createSchedulingActors(projectState);
+  const schedulingActors = createSchedulingActors(analysisProjectState);
   const lcm = calculateScheduleLcm(
     schedulingActors,
-    projectState.global.tick_ms
+    analysisProjectState.global.tick_ms
   );
   const tickGridProblems = createTickGridProblems(
     schedulingActors,
-    projectState.global.tick_ms
+    analysisProjectState.global.tick_ms
   );
   const priority = calculateEffectivePriorities(schedulingActors);
   const taskAnalyses = createTaskAnalyses(
-    projectState.tasks,
+    analysisProjectState.tasks,
     schedulingActors,
     priority.priorities
   );
-  const memoryProfile = createMemoryProfile(projectState);
+  const memoryProfile = createMemoryProfile(analysisProjectState);
   const sporadicServerAnalysis = createSporadicServerAnalysis(
-    projectState,
+    analysisProjectState,
     priority.priorities
   );
   const aperiodicCapacityPercent = createAperiodicCapacityPercent(taskAnalyses);
@@ -73,10 +96,14 @@ function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
     ...lcm.problems,
     ...tickGridProblems,
     ...priority.problems,
+    ...resolvedStochasticResult.problems,
     ...channelValidation.problems,
-    ...createTaskPlacementProblems(projectState),
-    ...createTaskAnalysisProblems(projectState.tasks, taskAnalyses),
-    ...createSporadicServerProblems(projectState, sporadicServerAnalysis),
+    ...createTaskPlacementProblems(analysisProjectState),
+    ...createTaskAnalysisProblems(analysisProjectState.tasks, taskAnalyses),
+    ...createSporadicServerProblems(
+      analysisProjectState,
+      sporadicServerAnalysis
+    ),
     ...memoryProfile.problems
   ];
 
@@ -88,19 +115,43 @@ function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
     memory_profile: memoryProfile.profile,
     sporadic_server: sporadicServerAnalysis,
     channels: channelValidation.channels,
+    stochastic_events: resolvedStochasticResult.analyses,
     problems
   };
 }
 
 function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
+  const stochasticResult = stochasticToAperiodic(
+    projectState.stochastic_events,
+    projectState.tasks
+  );
+  const syntheticAperiodicByDomain = new Map<
+    string,
+    NormalizedAperiodicTaskModel[]
+  >();
+
+  stochasticResult.syntheticAperiodicTasks.forEach((task) => {
+    const existing = syntheticAperiodicByDomain.get(task.domain_id);
+    if (existing === undefined) {
+      syntheticAperiodicByDomain.set(task.domain_id, [task]);
+      return;
+    }
+
+    existing.push(task);
+  });
+
   const channelValidation = validateChannels(projectState);
   const analyzedDomains = projectState.domains.slice(0, DOMAIN_ANALYSIS_LIMIT);
   const domainResults = analyzedDomains.map((domain) => {
-    const domainProjectState = createDomainProjectState(projectState, domain);
+    const domainProjectState = createDomainProjectState(
+      projectState,
+      domain,
+      syntheticAperiodicByDomain.get(domain.id) ?? []
+    );
     return {
       domain,
       projectState: domainProjectState,
-      snapshot: analyzeProjectScope(domainProjectState)
+      snapshot: analyzeProjectScope(domainProjectState, EMPTY_STOCHASTIC_RESULT)
     };
   });
   const taskAnalysisById = new Map(
@@ -137,7 +188,9 @@ function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
     memory_profile: memoryProfile,
     sporadic_server: sporadicServerAnalysis,
     channels: channelValidation.channels,
+    stochastic_events: stochasticResult.analyses,
     problems: [
+      ...stochasticResult.problems,
       ...channelValidation.problems,
       ...createTaskWithoutDomainProblems(projectState),
       ...createDomainFanOutLimitProblems(projectState.domains.length),
@@ -160,7 +213,8 @@ function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
 
 function createDomainProjectState(
   projectState: ProjectState,
-  domain: Domain
+  domain: Domain,
+  syntheticAperiodicTasks: NormalizedAperiodicTaskModel[]
 ): ProjectState {
   const tasks = projectState.tasks.filter(
     (task) => task.domain_id === domain.id
@@ -175,9 +229,12 @@ function createDomainProjectState(
     ...projectState,
     domains: [domain],
     tasks,
-    aperiodic_tasks: projectState.aperiodic_tasks.filter(
-      (task) => task.domain_id === domain.id
-    ),
+    aperiodic_tasks: [
+      ...projectState.aperiodic_tasks.filter(
+        (task) => task.domain_id === domain.id
+      ),
+      ...syntheticAperiodicTasks
+    ],
     sporadic_server:
       projectState.sporadic_server?.domain_id === domain.id
         ? projectState.sporadic_server
@@ -416,7 +473,7 @@ function createSchedulingActors(
   const actors = [...projectState.tasks];
   const server = projectState.sporadic_server;
 
-  if (server?.enabled === true) {
+  if (server?.enabled === true && projectState.aperiodic_tasks.length > 0) {
     actors.push({
       id: SPORADIC_SERVER_TASK_ID,
       name: 'SporadicServer',

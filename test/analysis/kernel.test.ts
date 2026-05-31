@@ -419,4 +419,67 @@ describe('analysis kernel', () => {
       ])
     );
   });
+
+  it('applies stochastic synthetic load only while events exist', () => {
+    const projectState = loadProjectState('motor-control-1-axis.yaml');
+    projectState.version = '0.3';
+    projectState.domains = [
+      { id: 'rtos', name: 'RTOS', kind: 'rtos', core_count: 1 },
+      { id: 'linux', name: 'Linux', kind: 'linux', core_count: 1 }
+    ];
+    projectState.tasks = projectState.tasks.map((task) => ({
+      ...task,
+      domain_id: task.id === 'isr-timer' ? 'linux' : 'rtos'
+    }));
+    projectState.sporadic_server = {
+      enabled: true,
+      budget_ms: 2,
+      period_ms: 20,
+      deadline_ms: 20,
+      priority_mode: 'manual',
+      manual_priority: 1,
+      stack: 'low',
+      domain_id: 'rtos'
+    };
+    projectState.stochastic_events = [
+      {
+        id: 'linux-cmd',
+        name: 'Linux Command',
+        domain_id: 'linux',
+        mean_interarrival_ms: 50,
+        consumer_task_id: 'sensor-fusion'
+      }
+    ];
+
+    const withEvent = analyzeProject(projectState);
+    const withoutEvent = analyzeProject({
+      ...projectState,
+      stochastic_events: []
+    });
+    const withEventResponseTime = withEvent.tasks.find(
+      (task) => task.task_id === 'sensor-fusion'
+    )?.iterative_response_time_ms;
+    const withoutEventResponseTime = withoutEvent.tasks.find(
+      (task) => task.task_id === 'sensor-fusion'
+    )?.iterative_response_time_ms;
+
+    expect(withEvent.stochastic_events).toEqual([
+      {
+        event_id: 'linux-cmd',
+        consumer_task_id: 'sensor-fusion',
+        synthetic_min_interarrival_ms: 50
+      }
+    ]);
+    expect(withEvent.problems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'analysis-stochastic-linux-cmd-mean-as-min-interarrival',
+          task_id: 'sensor-fusion'
+        })
+      ])
+    );
+    expect(withEventResponseTime).toBeGreaterThan(
+      withoutEventResponseTime ?? 0
+    );
+  });
 });
