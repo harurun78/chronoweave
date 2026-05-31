@@ -2,7 +2,9 @@ import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
 import {
+  DEFAULT_DOMAIN_ID,
   PROJECT_FILE_LATEST_VERSION,
+  PROJECT_FILE_V02_VERSION,
   PROJECT_FILE_VERSION,
   SPORADIC_SERVER_TASK_ID,
   type NormalizedProjectFile,
@@ -42,6 +44,8 @@ const taskFileSchema = z
     priority_mode: z.enum(['auto', 'manual']).optional(),
     manual_priority: z.number().int().optional(),
     stack: z.enum(['low', 'mid', 'high']),
+    domain_id: z.string().min(1).optional(),
+    core_index: z.number().int().nonnegative().optional(),
     description: z.string().optional()
   })
   .strict()
@@ -65,6 +69,7 @@ const aperiodicTaskFileSchema = z
     wcet_ms: z.number().positive(),
     deadline_ms: z.number().positive().optional(),
     stack: z.enum(['low', 'mid', 'high']),
+    domain_id: z.string().min(1).optional(),
     description: z.string().optional()
   })
   .strict();
@@ -77,7 +82,9 @@ const sporadicServerSchema = z
     deadline_ms: z.number().positive().optional(),
     priority_mode: z.enum(['auto', 'manual']).optional(),
     manual_priority: z.number().int().optional(),
-    stack: z.enum(['low', 'mid', 'high'])
+    stack: z.enum(['low', 'mid', 'high']),
+    domain_id: z.string().min(1).optional(),
+    core_index: z.number().int().nonnegative().optional()
   })
   .strict()
   .superRefine((server, context) => {
@@ -100,13 +107,62 @@ const codegenSettingsSchema = z
   })
   .strict();
 
+const domainSchema = z
+  .object({
+    id: z
+      .string()
+      .min(1)
+      .regex(/^[a-zA-Z0-9_-]+$/),
+    name: z.string().min(1),
+    kind: z.enum(['baremetal', 'rtos', 'linux', 'fpga']),
+    core_count: z.number().int().positive(),
+    description: z.string().optional()
+  })
+  .strict();
+
+const channelSchema = z
+  .object({
+    id: z
+      .string()
+      .min(1)
+      .regex(/^[a-zA-Z0-9_-]+$/),
+    producer_task_id: z.string().min(1),
+    consumer_task_id: z.string().min(1),
+    transport: z.enum(['shared_memory', 'mailbox', 'queue']),
+    latency_budget_ms: z.number().positive(),
+    description: z.string().optional()
+  })
+  .strict();
+
+const stochasticEventSourceSchema = z
+  .object({
+    id: z
+      .string()
+      .min(1)
+      .regex(/^[a-zA-Z0-9_-]+$/),
+    name: z.string().min(1),
+    domain_id: z.string().min(1),
+    mean_interarrival_ms: z.number().positive(),
+    std_dev_ms: z.number().nonnegative().optional(),
+    consumer_task_id: z.string().min(1),
+    description: z.string().optional()
+  })
+  .strict();
+
 export const projectFileSchema = z
   .object({
-    version: z.enum([PROJECT_FILE_VERSION, PROJECT_FILE_LATEST_VERSION]),
+    version: z.enum([
+      PROJECT_FILE_VERSION,
+      PROJECT_FILE_V02_VERSION,
+      PROJECT_FILE_LATEST_VERSION
+    ]),
     global: globalSettingsSchema,
+    domains: z.array(domainSchema).min(1).optional(),
     tasks: z.array(taskFileSchema).min(1),
     aperiodic_tasks: z.array(aperiodicTaskFileSchema).optional(),
     sporadic_server: sporadicServerSchema.optional(),
+    channels: z.array(channelSchema).optional(),
+    stochastic_events: z.array(stochasticEventSourceSchema).optional(),
     codegen: codegenSettingsSchema.optional()
   })
   .strict()
@@ -154,7 +210,20 @@ export const projectFileSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['version'],
-        message: `ProjectFile ${PROJECT_FILE_VERSION} cannot include Phase 2 fields; use ${PROJECT_FILE_LATEST_VERSION}`
+        message: `ProjectFile ${PROJECT_FILE_VERSION} cannot include Phase 2 fields; use ${PROJECT_FILE_V02_VERSION}`
+      });
+    }
+
+    if (
+      projectFile.version !== PROJECT_FILE_LATEST_VERSION &&
+      (projectFile.domains !== undefined ||
+        projectFile.channels !== undefined ||
+        projectFile.stochastic_events !== undefined)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['version'],
+        message: `Phase 4 fields (domains/channels/stochastic_events) require version ${PROJECT_FILE_LATEST_VERSION}`
       });
     }
   });
@@ -197,21 +266,44 @@ export function validateProjectFile(
 export function normalizeProjectFile(
   projectFile: ProjectFile
 ): NormalizedProjectFile {
+  const domains =
+    projectFile.domains && projectFile.domains.length > 0
+      ? projectFile.domains.map((domain) => ({ ...domain }))
+      : [
+          {
+            id: DEFAULT_DOMAIN_ID,
+            name: 'Default RTOS',
+            kind: 'rtos' as const,
+            core_count: 1
+          }
+        ];
+  const fallbackDomainId = domains[0]?.id ?? DEFAULT_DOMAIN_ID;
   return {
     ...projectFile,
     global: {
       ...projectFile.global,
       stack_presets: { ...projectFile.global.stack_presets }
     },
-    tasks: projectFile.tasks.map(normalizeTaskFile),
+    domains,
+    tasks: projectFile.tasks.map((task) => ({
+      ...normalizeTaskFile(task),
+      domain_id: task.domain_id ?? fallbackDomainId
+    })),
     aperiodic_tasks:
       projectFile.aperiodic_tasks?.map((task) => ({
-        ...task
+        ...task,
+        domain_id: task.domain_id ?? fallbackDomainId
       })) ?? [],
     sporadic_server:
       projectFile.sporadic_server === undefined
         ? undefined
-        : normalizeSporadicServer(projectFile.sporadic_server),
+        : {
+            ...normalizeSporadicServer(projectFile.sporadic_server),
+            domain_id: projectFile.sporadic_server.domain_id ?? fallbackDomainId
+          },
+    channels: projectFile.channels?.map((channel) => ({ ...channel })) ?? [],
+    stochastic_events:
+      projectFile.stochastic_events?.map((event) => ({ ...event })) ?? [],
     codegen:
       projectFile.codegen === undefined ? undefined : { ...projectFile.codegen }
   };

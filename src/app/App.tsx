@@ -115,7 +115,8 @@ export function App() {
       wcet_ms: 1,
       deadline_ms: 10,
       priority_mode: 'auto',
-      stack: 'low'
+      stack: 'low',
+      domain_id: projectState.domains[0]?.id ?? 'default'
     };
 
     updateProjectState((current) => ({

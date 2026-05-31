@@ -87,6 +87,7 @@ function createSchedulingActors(
       priority_mode: server.priority_mode,
       manual_priority: server.manual_priority,
       stack: server.stack,
+      domain_id: server.domain_id,
       description: 'Phase 2 bounded aperiodic execution server'
     });
   }

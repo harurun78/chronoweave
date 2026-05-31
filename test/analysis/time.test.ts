@@ -34,7 +34,8 @@ describe('analysis time helpers', () => {
       wcet_ms: 1,
       deadline_ms: 7.75,
       priority_mode: 'auto',
-      stack: 'low'
+      stack: 'low',
+      domain_id: 'default'
     };
 
     expect(createTickGridProblems([task], 0.5)).toEqual([

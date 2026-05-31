@@ -63,6 +63,7 @@ function createTask(id: string, periodMs: number): NormalizedTaskModel {
     wcet_ms: 1,
     deadline_ms: periodMs,
     priority_mode: 'auto',
-    stack: 'low'
+    stack: 'low',
+    domain_id: 'default'
   };
 }
