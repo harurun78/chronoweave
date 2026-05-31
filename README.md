@@ -1,42 +1,65 @@
 # chronoweave
 
-Chronoweave Phase 1 is an RTOS Task Design Kernel: a static React + TypeScript app for editing periodic task sets, deriving an approximate RTA/buffer/memory snapshot, and round-tripping YAML/JSON ProjectFiles.
+Chronoweave is an RTOS Task Design Kernel: a static React + TypeScript app for
+editing periodic and aperiodic task sets, deriving response-time / buffer /
+memory snapshots, generating a FreeRTOS scaffold, and comparing the design
+model against imported execution traces.
 
-## コンポーネント
+## Implementation status
+
+| Phase   | Status     | Highlights                                                                          |
+| ------- | ---------- | ----------------------------------------------------------------------------------- |
+| Phase 1 | Done       | ProjectFile v0.1, approximate RTA, Gantt/Problems/Property panels, YAML/JSON        |
+| Phase 2 | Done       | ProjectFile v0.2, aperiodic tasks, Sporadic Server, iterative RTA, FreeRTOS preview |
+| Phase 3 | Done (CSV) | Generic CSV trace import, observed-vs-design comparison, Observation panel          |
+| Phase 4 | Planned    | Vendor-specific trace adapters, observation persistence                             |
+
+See [docs/phase-roadmap.md](docs/phase-roadmap.md) and the Spec Kit features
+under [specs/](specs/) for the detailed scope.
+
+## Components
 
 - frontend: React + Vite + TypeScript (`src/`)
-- tests: Vitest/React Testing Library and Playwright (`test/`)
+- tests: Vitest / React Testing Library / Playwright (`test/`)
 
-## クイックスタート
+## Quick start
 
-### 必要な環境
-
-- Node.js 20
-- npm
-
-### インストール
+Requires Node.js 20 and npm.
 
 ```bash
 npm install
 npm run dev
 ```
 
-### 使い方
+## Local gate
 
 ```bash
 npm run lint
+npm run format:check
 npm run type-check
 npm run test:run
 npm run test:e2e
 npm run build
+npm audit --omit=dev --audit-level=moderate
 ```
 
-## ドキュメント
+The same gate is available as a single VS Code task: `verify: full local gate`
+in [.vscode/tasks.json](.vscode/tasks.json).
 
-- [仕様書一覧](docs/)
-- [仕様検討ログ](docs/specification-discussion-log.md)
-- [Spec Kit feature](specs/001-rtos-task-design-kernel/)
+## Trace CSV import (Phase 3)
 
-## ライセンス
+The Observation panel accepts a generic CSV with `task,start_ms,end_ms`
+columns. A working fixture lives at
+[test/fixtures/traces/motor-observation.csv](test/fixtures/traces/motor-observation.csv).
 
-TODO: ライセンスを記載
+## Documentation
+
+- [Specification index](docs/)
+- [Specification discussion log](docs/specification-discussion-log.md)
+- [Spec Kit features](specs/)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+
+## License
+
+[MIT](LICENSE)

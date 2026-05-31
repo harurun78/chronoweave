@@ -7,16 +7,17 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint .",
+    "dev": "vite",
     "format": "prettier --write \"*.{html,js,json,md,ts}\" \"src/**/*.{css,ts,tsx}\" \"test/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"*.{html,js,json,md,ts}\" \"src/**/*.{css,ts,tsx}\" \"test/**/*.{ts,tsx}\"",
-    "type-check": "tsc -b",
-    "test:run": "vitest run",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "test:integration": "vitest run test/ui",
-    "test:e2e": "playwright test"
+    "test:run": "vitest run",
+    "type-check": "tsc -b"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
@@ -38,6 +39,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
