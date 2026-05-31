@@ -319,6 +319,19 @@ function createTaskPlacementProblems(projectState: ProjectState): Problem[] {
       ];
     }
 
+    if (domain.core_count > 1 && task.core_index === undefined) {
+      return [
+        {
+          id: `analysis-${task.id}-missing-core-index`,
+          level: 'error',
+          message: `${task.name}: Core index is required for multicore domain ${domain.name}.`,
+          task_id: task.id,
+          domain_id: domain.id,
+          source: 'analysis'
+        }
+      ];
+    }
+
     const coreIndex = task.core_index ?? 0;
     if (coreIndex < 0 || coreIndex >= domain.core_count) {
       return [
