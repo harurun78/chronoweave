@@ -12,6 +12,7 @@ import type {
 } from '../model/project';
 import { SPORADIC_SERVER_TASK_ID } from '../model/project';
 import { calculateScheduleLcm } from './lcm';
+import { validateChannels } from './channels';
 import {
   BUFFER_WARNING_RATIO,
   ITERATIVE_RTA_MAX_ITERATIONS,
@@ -43,6 +44,7 @@ export function analyzeProject(projectState: ProjectState): AnalysisSnapshot {
 }
 
 function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
+  const channelValidation = validateChannels(projectState);
   const schedulingActors = createSchedulingActors(projectState);
   const lcm = calculateScheduleLcm(
     schedulingActors,
@@ -70,6 +72,7 @@ function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
     ...lcm.problems,
     ...tickGridProblems,
     ...priority.problems,
+    ...channelValidation.problems,
     ...createTaskPlacementProblems(projectState),
     ...createTaskAnalysisProblems(projectState.tasks, taskAnalyses),
     ...createSporadicServerProblems(projectState, sporadicServerAnalysis),
@@ -83,11 +86,13 @@ function analyzeProjectScope(projectState: ProjectState): AnalysisSnapshot {
     aperiodic_capacity_percent: aperiodicCapacityPercent,
     memory_profile: memoryProfile.profile,
     sporadic_server: sporadicServerAnalysis,
+    channels: channelValidation.channels,
     problems
   };
 }
 
 function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
+  const channelValidation = validateChannels(projectState);
   const analyzedDomains = projectState.domains.slice(0, DOMAIN_ANALYSIS_LIMIT);
   const domainResults = analyzedDomains.map((domain) => {
     const domainProjectState = createDomainProjectState(projectState, domain);
@@ -130,7 +135,9 @@ function analyzeProjectByDomain(projectState: ProjectState): AnalysisSnapshot {
     ),
     memory_profile: memoryProfile,
     sporadic_server: sporadicServerAnalysis,
+    channels: channelValidation.channels,
     problems: [
+      ...channelValidation.problems,
       ...createTaskWithoutDomainProblems(projectState),
       ...createDomainFanOutLimitProblems(projectState.domains.length),
       ...domainResults.flatMap((result) => [
@@ -173,6 +180,7 @@ function createDomainProjectState(
       projectState.sporadic_server?.domain_id === domain.id
         ? projectState.sporadic_server
         : undefined,
+    channels: [],
     stochastic_events: projectState.stochastic_events.filter(
       (event) => event.domain_id === domain.id
     ),
