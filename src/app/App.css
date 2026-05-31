@@ -63,6 +63,36 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #11161b;
+    --color-surface: #1a2128;
+    --color-fg: #e8edf2;
+    --color-fg-muted: #a4adb6;
+    --color-fg-subtle: #b8c6d0;
+    --color-border: #2d3640;
+    --color-border-strong: #3a444f;
+    --color-border-input: #495664;
+    --color-border-soft: #232b33;
+    --color-border-faint: #1f2730;
+    --color-accent: #7fb4cf;
+    --color-success: #5dbf86;
+    --color-success-strong: #98e3b5;
+    --color-warn: #e0b261;
+    --color-warn-strong: #f4d089;
+    --color-error: #ee7777;
+    --color-error-strong: #ff9b9b;
+    --color-error-darker: #ffb4b4;
+    --color-track: #1d242c;
+    --color-track-soft: #222a32;
+    --color-pill-bg: #233039;
+    --color-selected-row: #1f2a31;
+    --color-gantt-bar: #e88a5f;
+    --color-gantt-bar-stroke: #ffb38c;
+    --color-memory-wave: #8ea4b8;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
