@@ -185,6 +185,7 @@ export interface Problem {
   level: ProblemLevel;
   message: string;
   task_id?: string;
+  domain_id?: string;
   source: ProblemSource;
 }
 
