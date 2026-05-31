@@ -31,6 +31,14 @@ npm install
 npm run dev
 ```
 
+## Environment variables
+
+Vite picks up `.env.local` / `.env` at build time. See [.env.example](.env.example) for the list.
+
+| Name             | Default | Purpose                                                                                             |
+| ---------------- | ------- | --------------------------------------------------------------------------------------------------- |
+| `VITE_BASE_PATH` | `/`     | Public base path for the built site. Local dev keeps `/`; GitHub Pages deploy sets `/chronoweave/`. |
+
 ## Local gate
 
 ```bash
