@@ -1,0 +1,96 @@
+version: '0.3'
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+  ram_capacity: 131072
+domains:
+  - id: rtos
+    name: RTOS
+    kind: rtos
+    core_count: 2
+  - id: linux
+    name: Linux
+    kind: linux
+    core_count: 1
+tasks:
+  - id: rtos-c0-fast-a
+    name: RtosC0FastA
+    period_ms: 5
+    wcet_ms: 0.6
+    deadline_ms: 5
+    stack: low
+    domain_id: rtos
+    core_index: 0
+  - id: rtos-c0-fast-b
+    name: RtosC0FastB
+    period_ms: 10
+    wcet_ms: 1.1
+    deadline_ms: 10
+    stack: mid
+    domain_id: rtos
+    core_index: 0
+  - id: rtos-c0-mid
+    name: RtosC0Mid
+    period_ms: 20
+    wcet_ms: 2
+    deadline_ms: 20
+    stack: mid
+    domain_id: rtos
+    core_index: 0
+  - id: rtos-c0-slow
+    name: RtosC0Slow
+    period_ms: 40
+    wcet_ms: 3.5
+    deadline_ms: 40
+    stack: high
+    domain_id: rtos
+    core_index: 0
+  - id: rtos-c1-fast-a
+    name: RtosC1FastA
+    period_ms: 5
+    wcet_ms: 0.5
+    deadline_ms: 5
+    stack: low
+    domain_id: rtos
+    core_index: 1
+  - id: rtos-c1-fast-b
+    name: RtosC1FastB
+    period_ms: 10
+    wcet_ms: 1
+    deadline_ms: 10
+    stack: low
+    domain_id: rtos
+    core_index: 1
+  - id: rtos-c1-mid
+    name: RtosC1Mid
+    period_ms: 20
+    wcet_ms: 1.8
+    deadline_ms: 20
+    stack: mid
+    domain_id: rtos
+    core_index: 1
+  - id: rtos-c1-slow
+    name: RtosC1Slow
+    period_ms: 40
+    wcet_ms: 3.2
+    deadline_ms: 40
+    stack: high
+    domain_id: rtos
+    core_index: 1
+  - id: linux-net
+    name: LinuxNet
+    period_ms: 25
+    wcet_ms: 2.5
+    deadline_ms: 25
+    stack: low
+    domain_id: linux
+  - id: linux-ui
+    name: LinuxUi
+    period_ms: 50
+    wcet_ms: 4
+    deadline_ms: 50
+    stack: low
+    domain_id: linux
