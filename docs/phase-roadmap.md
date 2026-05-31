@@ -12,12 +12,12 @@ Chronoweave は、MVP をゴールとして閉じるのではなく、最終構�
 
 ### 受け入れ条件
 
-- [ ] Motor Control 1-axis sample を import できる
-- [ ] `MotorCtrl_Y` を追加し、WCET をガント上で調整できる
-- [ ] ガント、バッファゲージ、メモリプロファイル、Problems が同一状態から更新される
-- [ ] Phase 1 の近似 RTA 注意 Info が常時表示される
-- [ ] YAML export/import により保存前と同じ設計状態を復元できる
-- [ ] 描画応答の performance budget が定義され、計測できる
+- [x] Motor Control 1-axis sample を import できる
+- [x] `MotorCtrl_Y` を追加し、WCET をガント上で調整できる
+- [x] ガント、バッファゲージ、メモリプロファイル、Problems が同一状態から更新される
+- [x] Phase 1 の近似 RTA 注意 Info が常時表示される
+- [x] YAML export/import により保存前と同じ設計状態を復元できる
+- [x] 描画応答の performance budget が定義され、計測できる
 
 ### スコープ外
 
@@ -50,11 +50,11 @@ Chronoweave は、MVP をゴールとして閉じるのではなく、最終構�
 
 ### 受け入れ条件
 
-- [ ] 非周期タスクを入力できる
-- [ ] Sporadic Server の予算と周期を設定できる
-- [ ] 反復 RTA によって Phase 1 の近似より保守的な応答時間を算出できる
-- [ ] FreeRTOS 生成 plugin が ProjectFile を入力として扱える
-- [ ] コード生成は UI 中核から分離された module/plugin として実装できる
+- [x] 非周期タスクを入力できる
+- [x] Sporadic Server の予算と周期を設定できる
+- [x] 反復 RTA によって Phase 1 の近似より保守的な応答時間を算出できる
+- [x] FreeRTOS 生成 plugin が ProjectFile を入力として扱える
+- [x] コード生成は UI 中核から分離された module/plugin として実装できる
 
 ### スコープ外
 
@@ -80,9 +80,9 @@ Tracealyzer / SystemView / CSV 等のトレースログからタスク構造を�
 
 ### 受け入れ条件
 
-- [ ] トレースログから task name, period estimate, execution time estimate を抽出できる
-- [ ] 設計上の TaskModel と観測由来 TaskModel を比較できる
-- [ ] 差分を Problems または専用比較ビューで表示できる
+- [x] トレースログから task name, period estimate, execution time estimate を抽出できる
+- [x] 設計上の TaskModel と観測由来 TaskModel を比較できる
+- [x] 差分を Problems または専用比較ビューで表示できる
 
 ### スコープ外
 
@@ -181,3 +181,9 @@ ProjectFile は Phase 1 から長期的な中間表現として扱う。後続 P
 - Phase 2 を `analysis upgrade` と `codegen plugin` に分割するか
 - Phase 4 の SoC profile schema
 - Phase 5 の DoktorMagus 連携契約
+
+## 実装状況サマリ (2026-05)
+
+- Phase 1 (`specs/001-rtos-task-design-kernel`): 完了。ProjectFile v0.1、近似 RTA、Gantt/Problems/Property、YAML/JSON I/O、Undo/Redo、Motor Control サンプルを実装済み。
+- Phase 2 (`specs/002-aperiodic-codegen`): 完了。ProjectFile v0.2、非周期タスク、Sporadic Server、反復 RTA、FreeRTOS scaffold を実装済み。
+- Phase 3 (`specs/003-observation-trace-import`): CSV 観測 import と Observation panel を完了。Phase 4 で vendor 固有 trace と persistence を扱う。
