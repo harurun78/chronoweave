@@ -309,6 +309,48 @@ export function normalizeProjectFile(
   };
 }
 
+export function migrateProjectFile(projectFile: ProjectFile): ProjectFile {
+  if (projectFile.version === PROJECT_FILE_LATEST_VERSION) {
+    return projectFile;
+  }
+
+  const domains =
+    projectFile.domains && projectFile.domains.length > 0
+      ? projectFile.domains.map((domain) => ({ ...domain }))
+      : [
+          {
+            id: DEFAULT_DOMAIN_ID,
+            name: 'Default RTOS',
+            kind: 'rtos' as const,
+            core_count: 1
+          }
+        ];
+  const fallbackDomainId = domains[0]?.id ?? DEFAULT_DOMAIN_ID;
+
+  return {
+    ...projectFile,
+    version: PROJECT_FILE_LATEST_VERSION,
+    domains,
+    tasks: projectFile.tasks.map((task) => ({
+      ...task,
+      domain_id: task.domain_id ?? fallbackDomainId
+    })),
+    aperiodic_tasks: projectFile.aperiodic_tasks?.map((task) => ({
+      ...task,
+      domain_id: task.domain_id ?? fallbackDomainId
+    })),
+    sporadic_server:
+      projectFile.sporadic_server === undefined
+        ? undefined
+        : {
+            ...projectFile.sporadic_server,
+            domain_id: projectFile.sporadic_server.domain_id ?? fallbackDomainId
+          },
+    channels: projectFile.channels ?? [],
+    stochastic_events: projectFile.stochastic_events ?? []
+  };
+}
+
 export function parseProjectFileYaml(
   input: string
 ): ProjectFileValidationResult {
