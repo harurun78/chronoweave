@@ -54,6 +54,7 @@ export function App() {
   const redoProjectState = useSetAtom(redoProjectStateAtom);
   const importInputRef = useRef<HTMLInputElement>(null);
   const traceInputRef = useRef<HTMLInputElement>(null);
+  const propertyNameInputRef = useRef<HTMLInputElement>(null);
   const [lastImportProblems, setLastImportProblems] = useState<Problem[]>([]);
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
   const trace = useTraceImport();
@@ -341,7 +342,11 @@ export function App() {
             />
           </section>
 
-          <ProblemsPanel problems={problems} onSelectTask={selectTask} />
+          <ProblemsPanel
+            problems={problems}
+            onSelectTask={selectTask}
+            onFocusProperty={() => propertyNameInputRef.current?.focus()}
+          />
           <ObservationPanel comparisons={observationComparison.comparisons} />
           <CodegenPreview files={generatedFiles} />
         </section>
@@ -349,6 +354,7 @@ export function App() {
         <PropertyPanel
           selectedTask={selectedTask}
           ramCapacity={projectState.global.ram_capacity}
+          nameInputRef={propertyNameInputRef}
           onUpdateRamCapacity={updateGlobalRamCapacity}
           onUpdateTask={updateTask}
         />

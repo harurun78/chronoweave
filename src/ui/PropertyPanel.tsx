@@ -1,9 +1,11 @@
+import type { RefObject } from 'react';
 import type { NormalizedTaskModel } from '../model/project';
 import { NumberInput, StackSelect } from './inputs';
 
 interface PropertyPanelProps {
   selectedTask?: NormalizedTaskModel;
   ramCapacity?: number;
+  nameInputRef?: RefObject<HTMLInputElement>;
   onUpdateRamCapacity: (value: string) => void;
   onUpdateTask: (taskId: string, patch: Partial<NormalizedTaskModel>) => void;
 }
@@ -11,6 +13,7 @@ interface PropertyPanelProps {
 export function PropertyPanel({
   selectedTask,
   ramCapacity,
+  nameInputRef,
   onUpdateRamCapacity,
   onUpdateTask
 }: PropertyPanelProps) {
@@ -31,6 +34,7 @@ export function PropertyPanel({
       <label>
         Name
         <input
+          ref={nameInputRef}
           value={selectedTask.name}
           onChange={(event) =>
             onUpdateTask(selectedTask.id, { name: event.currentTarget.value })

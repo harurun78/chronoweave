@@ -3,9 +3,14 @@ import type { Problem } from '../model/project';
 interface ProblemsPanelProps {
   problems: Problem[];
   onSelectTask: (taskId: string) => void;
+  onFocusProperty?: () => void;
 }
 
-export function ProblemsPanel({ problems, onSelectTask }: ProblemsPanelProps) {
+export function ProblemsPanel({
+  problems,
+  onSelectTask,
+  onFocusProperty
+}: ProblemsPanelProps) {
   return (
     <section className="panel problems-panel" aria-labelledby="problems-title">
       <div className="panel-heading">
@@ -20,7 +25,13 @@ export function ProblemsPanel({ problems, onSelectTask }: ProblemsPanelProps) {
             <button
               type="button"
               disabled={problem.task_id === undefined}
-              onClick={() => problem.task_id && onSelectTask(problem.task_id)}
+              onClick={() => {
+                if (problem.task_id === undefined) {
+                  return;
+                }
+                onSelectTask(problem.task_id);
+                onFocusProperty?.();
+              }}
             >
               {problem.level}
             </button>
