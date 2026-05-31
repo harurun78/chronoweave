@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { generateFreeRtosFiles } from '../codegen/freertos';
 import {
@@ -27,9 +27,9 @@ import {
   undoProjectStateAtom,
   updateProjectStateAtom
 } from '../state/projectState';
-import { compareObservedTasks } from '../trace/compare';
-import { parseTraceCsv } from '../trace/csvTrace';
-import type { ObservedTask } from '../trace/types';
+import { useObservation } from '../hooks/useObservation';
+import { usePerfMeasure } from '../hooks/usePerfMeasure';
+import { useTraceImport } from '../hooks/useTraceImport';
 import { BufferPanel } from '../ui/BufferPanel';
 import { CodegenPreview } from '../ui/CodegenPreview';
 import { GanttChart } from '../ui/GanttChart';
@@ -56,8 +56,8 @@ export function App() {
   const traceInputRef = useRef<HTMLInputElement>(null);
   const [lastImportProblems, setLastImportProblems] = useState<Problem[]>([]);
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
-  const [observedTasks, setObservedTasks] = useState<ObservedTask[]>([]);
-  const [traceImportProblems, setTraceImportProblems] = useState<Problem[]>([]);
+  const trace = useTraceImport();
+  const perf = usePerfMeasure();
 
   useEffect(() => {
     performance.mark?.('chronoweave-project-state-redraw');
@@ -77,16 +77,13 @@ export function App() {
     projectState.tasks.find(
       (task) => task.id === projectState.selectedTaskId
     ) ?? projectState.tasks[0];
-  const observationComparison = useMemo(
-    () =>
-      observedTasks.length === 0
-        ? { comparisons: [], problems: [] }
-        : compareObservedTasks(projectState, observedTasks),
-    [observedTasks, projectState]
+  const observationComparison = useObservation(
+    projectState,
+    trace.observedTasks
   );
   const problems = [
     ...lastImportProblems,
-    ...traceImportProblems,
+    ...trace.traceImportProblems,
     ...analysisSnapshot.problems,
     ...observationComparison.problems
   ];
@@ -96,7 +93,7 @@ export function App() {
   }
 
   function updateTask(taskId: string, patch: Partial<NormalizedTaskModel>) {
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     updateProjectState((current) => ({
       ...current,
       selectedTaskId: taskId,
@@ -107,7 +104,7 @@ export function App() {
   }
 
   function addTask() {
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     const index = projectState.tasks.length + 1;
     const task: NormalizedTaskModel = {
       id: `task-${index}`,
@@ -127,7 +124,7 @@ export function App() {
   }
 
   function duplicateSelectedTask() {
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     const sourceTask =
       selectedTask ??
       projectState.tasks.find((task) => task.name === 'MotorCtrl_X');
@@ -155,7 +152,7 @@ export function App() {
   }
 
   function deleteSelectedTask() {
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     if (selectedTask === undefined || projectState.tasks.length <= 1) {
       return;
     }
@@ -167,7 +164,7 @@ export function App() {
   }
 
   function updateGlobalRamCapacity(value: string) {
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     updateProjectState((current) => ({
       ...current,
       global: {
@@ -178,7 +175,7 @@ export function App() {
   }
 
   function loadPhaseTwoSample() {
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     setGeneratedFiles([]);
     replaceProjectState(
       normalizedProjectToProjectState(
@@ -189,10 +186,10 @@ export function App() {
   }
 
   function generateFreeRtosPreview() {
-    performance.mark?.('chronoweave-codegen-start');
+    perf.mark('chronoweave-codegen-start');
     const files = generateFreeRtosFiles(projectState);
-    performance.mark?.('chronoweave-codegen-end');
-    performance.measure?.(
+    perf.mark('chronoweave-codegen-end');
+    perf.measure(
       'chronoweave-codegen',
       'chronoweave-codegen-start',
       'chronoweave-codegen-end'
@@ -200,37 +197,11 @@ export function App() {
     setGeneratedFiles(files);
   }
 
-  async function importTraceCsv(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = '';
-
-    if (file === undefined) {
-      return;
-    }
-
-    performance.mark?.('chronoweave-trace-import-start');
-    const result = parseTraceCsv(await file.text());
-    performance.mark?.('chronoweave-trace-import-end');
-    performance.measure?.(
-      'chronoweave-trace-import',
-      'chronoweave-trace-import-start',
-      'chronoweave-trace-import-end'
-    );
-
-    if (!result.ok) {
-      setTraceImportProblems(result.problems);
-      return;
-    }
-
-    setTraceImportProblems(result.problems);
-    setObservedTasks(result.observed_tasks);
-  }
-
   function exportProject(format: ProjectFileFormat) {
-    performance.mark?.(`chronoweave-export-${format}-start`);
+    perf.mark(`chronoweave-export-${format}-start`);
     const serializedProject = serializeProjectFile(projectState, format);
-    performance.mark?.(`chronoweave-export-${format}-end`);
-    performance.measure?.(
+    perf.mark(`chronoweave-export-${format}-end`);
+    perf.measure(
       `chronoweave-export-${format}`,
       `chronoweave-export-${format}-start`,
       `chronoweave-export-${format}-end`
@@ -254,12 +225,12 @@ export function App() {
       return;
     }
 
-    performance.mark?.('chronoweave-import-start');
+    perf.mark('chronoweave-import-start');
     const text = await file.text();
     const format = file.name.endsWith('.json') ? 'json' : 'yaml';
     const result = parseSerializedProjectFile(text, format);
-    performance.mark?.('chronoweave-import-end');
-    performance.measure?.(
+    perf.mark('chronoweave-import-end');
+    perf.measure(
       'chronoweave-import',
       'chronoweave-import-start',
       'chronoweave-import-end'
@@ -271,10 +242,9 @@ export function App() {
     }
 
     setLastImportProblems([]);
-    setTraceImportProblems([]);
-    setObservedTasks([]);
+    trace.reset();
     setGeneratedFiles([]);
-    performance.mark?.('chronoweave-project-state-commit-start');
+    perf.mark('chronoweave-project-state-commit-start');
     replaceProjectState(
       normalizedProjectToProjectState(result.normalizedProjectFile)
     );
@@ -295,7 +265,7 @@ export function App() {
           onExport={exportProject}
           onGenerateFreeRtos={generateFreeRtosPreview}
           onImportProject={importProject}
-          onImportTrace={importTraceCsv}
+          onImportTrace={trace.importTraceCsv}
           onLoadSampleAperiodic={loadPhaseTwoSample}
           onLoadSampleMotor={resetProjectState}
           onRedo={redoProjectState}
