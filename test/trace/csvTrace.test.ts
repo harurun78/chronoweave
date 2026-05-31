@@ -3,7 +3,11 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseTraceCsv } from '../../src/trace/csvTrace';
+import {
+  parseTraceCsv,
+  TRACE_CSV_MAX_BYTES,
+  TRACE_CSV_MAX_ROWS
+} from '../../src/trace/csvTrace';
 
 const fixtureDirectory = join(process.cwd(), 'test/fixtures/traces');
 
@@ -62,5 +66,31 @@ describe('generic CSV trace parser', () => {
         expect.objectContaining({ id: 'trace-import-row-3-timestamp' })
       ])
     );
+  });
+});
+
+describe('parseTraceCsv size and row limits', () => {
+  it('rejects input exceeding TRACE_CSV_MAX_BYTES', () => {
+    const header = 'task,start_ms,end_ms\n';
+    const row = 'taskA,0,1\n';
+    const padding = 'x'.repeat(TRACE_CSV_MAX_BYTES + 10);
+    const oversized = header + row + padding;
+    const result = parseTraceCsv(oversized);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.problems[0].id).toBe('trace-import-size-limit');
+    }
+  });
+
+  it('rejects input exceeding TRACE_CSV_MAX_ROWS', () => {
+    const header = 'task,start_ms,end_ms\n';
+    const rows = Array.from({ length: TRACE_CSV_MAX_ROWS + 5 })
+      .map(() => 'a,0,1')
+      .join('\n');
+    const result = parseTraceCsv(header + rows);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.problems[0].id).toBe('trace-import-row-limit');
+    }
   });
 });

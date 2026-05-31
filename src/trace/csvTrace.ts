@@ -3,7 +3,20 @@ import type { ObservedTask, TraceEvent, TraceImportResult } from './types';
 
 const REQUIRED_HEADERS = ['task', 'start_ms', 'end_ms'] as const;
 
+export const TRACE_CSV_MAX_BYTES = 100 * 1024;
+export const TRACE_CSV_MAX_ROWS = 10_000;
+
 export function parseTraceCsv(input: string): TraceImportResult {
+  const byteLength =
+    typeof TextEncoder !== 'undefined'
+      ? new TextEncoder().encode(input).byteLength
+      : input.length;
+  if (byteLength > TRACE_CSV_MAX_BYTES) {
+    return traceFailure(
+      'size-limit',
+      `Trace CSV is ${byteLength} bytes, exceeding the ${TRACE_CSV_MAX_BYTES}-byte limit.`
+    );
+  }
   const lines = input
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -28,6 +41,14 @@ export function parseTraceCsv(input: string): TraceImportResult {
 
   const problems: Problem[] = [];
   const events: TraceEvent[] = [];
+
+  const dataRowCount = lines.length - 1;
+  if (dataRowCount > TRACE_CSV_MAX_ROWS) {
+    return traceFailure(
+      'row-limit',
+      `Trace CSV has ${dataRowCount} data rows, exceeding the ${TRACE_CSV_MAX_ROWS}-row limit.`
+    );
+  }
 
   lines.slice(1).forEach((line, rowOffset) => {
     const rowNumber = rowOffset + 2;
