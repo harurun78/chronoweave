@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  migrateProjectFile,
   parseProjectFileJson,
   parseProjectFileYaml,
   validateProjectFile
@@ -233,5 +234,84 @@ describe('ProjectFile schema validation and normalization', () => {
     const result = parseProjectFileYaml(readFixture(fixtureName));
 
     expect(result.ok).toBe(true);
+  });
+});
+
+describe('ProjectFile migrator (T005)', () => {
+  it('migrates a v0.1 ProjectFile to v0.3 with the default domain', () => {
+    const result = parseProjectFileYaml(
+      readFixture('motor-control-1-axis.yaml')
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.projectFile.version).toBe('0.1');
+
+    const migrated = migrateProjectFile(result.projectFile);
+
+    expect(migrated.version).toBe('0.3');
+    expect(migrated.domains).toEqual([
+      { id: 'default', name: 'Default RTOS', kind: 'rtos', core_count: 1 }
+    ]);
+    expect(migrated.channels).toEqual([]);
+    expect(migrated.stochastic_events).toEqual([]);
+    migrated.tasks.forEach((task) => {
+      expect(task.domain_id).toBe('default');
+    });
+    expect(migrated.tasks.map((t) => t.id)).toEqual(
+      result.projectFile.tasks.map((t) => t.id)
+    );
+    expect(migrated.global).toEqual(result.projectFile.global);
+  });
+
+  it('migrates a v0.2 ProjectFile preserving aperiodic and sporadic fields', () => {
+    const result = parseProjectFileYaml(readFixture('phase-2-aperiodic.yaml'));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.projectFile.version).toBe('0.2');
+
+    const migrated = migrateProjectFile(result.projectFile);
+
+    expect(migrated.version).toBe('0.3');
+    expect(migrated.domains?.[0]?.id).toBe('default');
+    migrated.aperiodic_tasks?.forEach((task) => {
+      expect(task.domain_id).toBe('default');
+    });
+    if (migrated.sporadic_server) {
+      expect(migrated.sporadic_server.domain_id).toBe('default');
+    }
+    expect(migrated.aperiodic_tasks?.map((t) => t.id)).toEqual(
+      result.projectFile.aperiodic_tasks?.map((t) => t.id)
+    );
+  });
+
+  it('is idempotent on a v0.3 ProjectFile', () => {
+    const v03Input = {
+      version: '0.3' as const,
+      global: {
+        tick_ms: 1,
+        stack_presets: { low: 512, mid: 2048, high: 4096 }
+      },
+      domains: [
+        { id: 'rtos', name: 'RTOS', kind: 'rtos' as const, core_count: 1 }
+      ],
+      tasks: [
+        {
+          id: 't1',
+          name: 'T1',
+          period_ms: 10,
+          wcet_ms: 1,
+          stack: 'low' as const,
+          domain_id: 'rtos'
+        }
+      ]
+    };
+    const result = validateProjectFile(v03Input);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const migrated = migrateProjectFile(result.projectFile);
+    expect(migrated).toBe(result.projectFile);
   });
 });
