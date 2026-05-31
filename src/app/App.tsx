@@ -9,6 +9,7 @@ import {
   type ProjectFileFormat
 } from '../io/projectFileIo';
 import type {
+  ChannelTransport,
   GeneratedFile,
   NormalizedTaskModel,
   Problem
@@ -33,6 +34,7 @@ import { usePerfMeasure } from '../hooks/usePerfMeasure';
 import { useTraceImport } from '../hooks/useTraceImport';
 import { BufferPanel } from '../ui/BufferPanel';
 import { CodegenPreview } from '../ui/CodegenPreview';
+import { ChannelPanel } from '../ui/ChannelPanel';
 import { DomainTabs } from '../ui/DomainTabs';
 import { GanttChart } from '../ui/GanttChart';
 import { HeaderActions } from '../ui/HeaderActions';
@@ -187,6 +189,38 @@ export function App() {
         ...current.global,
         ram_capacity: value === '' ? undefined : Number(value)
       }
+    }));
+  }
+
+  function createChannel(draft: {
+    producer_task_id: string;
+    consumer_task_id: string;
+    transport: ChannelTransport;
+    latency_budget_ms: number;
+  }) {
+    perf.mark('chronoweave-project-state-commit-start');
+    updateProjectState((current) => {
+      let index = current.channels.length + 1;
+      let id = `channel-${index}`;
+
+      while (current.channels.some((channel) => channel.id === id)) {
+        index += 1;
+        id = `channel-${index}`;
+      }
+
+      return {
+        ...current,
+        version: '0.3',
+        channels: [...current.channels, { id, ...draft }]
+      };
+    });
+  }
+
+  function deleteChannel(channelId: string) {
+    perf.mark('chronoweave-project-state-commit-start');
+    updateProjectState((current) => ({
+      ...current,
+      channels: current.channels.filter((channel) => channel.id !== channelId)
     }));
   }
 
@@ -372,6 +406,12 @@ export function App() {
             problems={problems}
             onSelectTask={selectTask}
             onFocusProperty={() => propertyNameInputRef.current?.focus()}
+          />
+          <ChannelPanel
+            channels={projectState.channels}
+            tasks={projectState.tasks}
+            onCreateChannel={createChannel}
+            onDeleteChannel={deleteChannel}
           />
           <ObservationPanel comparisons={observationComparison.comparisons} />
           <CodegenPreview files={generatedFiles} />
