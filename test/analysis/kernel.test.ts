@@ -223,6 +223,95 @@ describe('analysis kernel', () => {
     ).toBe(false);
   });
 
+  it('merges channel validation results into AnalysisSnapshot', () => {
+    const projectState = loadProjectState('motor-control-1-axis.yaml');
+    projectState.version = '0.3';
+    projectState.channels = [
+      {
+        id: 'ch-ok',
+        producer_task_id: 'isr-timer',
+        consumer_task_id: 'motorctrl-x',
+        transport: 'mailbox',
+        latency_budget_ms: 2
+      },
+      {
+        id: 'ch-missing-consumer',
+        producer_task_id: 'isr-timer',
+        consumer_task_id: 'missing-consumer',
+        transport: 'queue',
+        latency_budget_ms: 1
+      }
+    ];
+
+    const snapshot = analyzeProject(projectState);
+
+    expect(snapshot.channels).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ channel_id: 'ch-ok', valid: true }),
+        expect.objectContaining({
+          channel_id: 'ch-missing-consumer',
+          valid: false
+        })
+      ])
+    );
+    expect(snapshot.problems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'analysis-channel-ch-missing-consumer-missing-consumer'
+        })
+      ])
+    );
+  });
+
+  it('merges channel Problems once in multi-domain analysis', () => {
+    const projectState = loadProjectState('motor-control-1-axis.yaml');
+    projectState.version = '0.3';
+    projectState.domains = [
+      { id: 'rtos', name: 'RTOS', kind: 'rtos', core_count: 1 },
+      { id: 'linux', name: 'Linux', kind: 'linux', core_count: 1 }
+    ];
+    projectState.tasks = projectState.tasks.map((task) => ({
+      ...task,
+      domain_id: task.id === 'isr-timer' ? 'rtos' : 'linux'
+    }));
+    projectState.channels = [
+      {
+        id: 'ch-cross-domain',
+        producer_task_id: 'isr-timer',
+        consumer_task_id: 'motorctrl-x',
+        transport: 'shared_memory',
+        latency_budget_ms: 2
+      },
+      {
+        id: 'ch-missing-producer',
+        producer_task_id: 'missing-producer',
+        consumer_task_id: 'motorctrl-x',
+        transport: 'queue',
+        latency_budget_ms: 2
+      }
+    ];
+
+    const snapshot = analyzeProject(projectState);
+    const missingProducerProblems = snapshot.problems.filter(
+      (problem) =>
+        problem.id === 'analysis-channel-ch-missing-producer-missing-producer'
+    );
+
+    expect(snapshot.channels).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          channel_id: 'ch-cross-domain',
+          valid: true
+        }),
+        expect.objectContaining({
+          channel_id: 'ch-missing-producer',
+          valid: false
+        })
+      ])
+    );
+    expect(missingProducerProblems).toHaveLength(1);
+  });
+
   it('reports large LCM, high utilization, and memory warning fixtures', () => {
     expect(
       analyzeProject(loadProjectState('lcm-warning.yaml')).problems
