@@ -1,10 +1,14 @@
 import type {
+  CoreAnalysis,
   Domain,
+  StackPresets,
   NormalizedTaskModel,
   Problem,
   TaskAnalysis
 } from '../model/project';
+import { calculateScheduleLcm } from './lcm';
 import { calculateEffectivePriorities } from './priority';
+import { millisecondsToTicks } from './time';
 
 const RTA_MAX_ITERATIONS = 50;
 
@@ -14,10 +18,82 @@ export interface MulticoreDomainResult {
   problems: Problem[];
 }
 
+export interface CoreStackAnalysisOptions {
+  domain: Domain;
+  tasks: NormalizedTaskModel[];
+  stackPresets: StackPresets;
+  tickMs: number;
+  sampleTickLimit: number;
+  coreLimit?: number;
+}
+
 export function analyzeMulticoreDomain(
   domain: Domain,
   tasks: NormalizedTaskModel[]
 ): MulticoreDomainResult {
+  const { coreAssignments, problems } = assignTasksToCores(domain, tasks);
+
+  const taskAnalyses = Object.entries(coreAssignments)
+    .flatMap(([, coreTasks]) => analyzeCoreTasks(coreTasks))
+    .sort((left, right) => left.task_id.localeCompare(right.task_id));
+
+  return {
+    coreAssignments,
+    taskAnalyses,
+    problems
+  };
+}
+
+export function createCoreAnalysesWithStackOccupancy(
+  options: CoreStackAnalysisOptions
+): CoreAnalysis[] {
+  const {
+    domain,
+    tasks,
+    stackPresets,
+    tickMs,
+    sampleTickLimit,
+    coreLimit = domain.core_count
+  } = options;
+  const { coreAssignments } = assignTasksToCores(domain, tasks);
+  const analyzedCoreCount = Math.min(domain.core_count, coreLimit);
+  const lcm = calculateScheduleLcm(tasks, tickMs);
+  const sampleTicks = Math.min(lcm.lcm_ticks, sampleTickLimit);
+
+  return Array.from({ length: analyzedCoreCount }, (_, coreIndex) => {
+    const coreTasks = coreAssignments[coreIndex] ?? [];
+    const stackOccupancySeries = Array.from(
+      { length: sampleTicks },
+      (_, tickIndex) =>
+        coreTasks.reduce((usageBytes, task) => {
+          const periodTicks = millisecondsToTicks(task.period_ms, tickMs);
+          if (periodTicks === null || periodTicks === 0) {
+            return usageBytes;
+          }
+
+          const offsetMs = (tickIndex % periodTicks) * tickMs;
+          return offsetMs < task.wcet_ms
+            ? usageBytes + stackPresets[task.stack]
+            : usageBytes;
+        }, 0)
+    );
+
+    return {
+      core_index: coreIndex,
+      task_ids: coreTasks.map((task) => task.id),
+      stack_occupancy_series: stackOccupancySeries,
+      stack_peak_bytes: Math.max(0, ...stackOccupancySeries)
+    };
+  });
+}
+
+function assignTasksToCores(
+  domain: Domain,
+  tasks: NormalizedTaskModel[]
+): {
+  coreAssignments: Record<number, NormalizedTaskModel[]>;
+  problems: Problem[];
+} {
   const coreAssignments: Record<number, NormalizedTaskModel[]> =
     Object.fromEntries(
       Array.from({ length: domain.core_count }, (_, coreIndex) => [
@@ -56,13 +132,8 @@ export function analyzeMulticoreDomain(
     coreAssignments[coreIndex].push(task);
   });
 
-  const taskAnalyses = Object.entries(coreAssignments)
-    .flatMap(([, coreTasks]) => analyzeCoreTasks(coreTasks))
-    .sort((left, right) => left.task_id.localeCompare(right.task_id));
-
   return {
     coreAssignments,
-    taskAnalyses,
     problems
   };
 }

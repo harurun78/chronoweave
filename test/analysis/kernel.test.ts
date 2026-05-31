@@ -116,10 +116,10 @@ describe('analysis kernel', () => {
     expect(baremetalDomain?.tasks.map((task) => task.task_id)).toEqual([
       'motorctrl-x'
     ]);
-    expect(rtosDomain?.cores).toEqual([
+    expect(rtosDomain?.cores).toMatchObject([
       { core_index: 0, task_ids: ['isr-timer', 'sensor-fusion'] }
     ]);
-    expect(baremetalDomain?.cores).toEqual([
+    expect(baremetalDomain?.cores).toMatchObject([
       { core_index: 0, task_ids: ['motorctrl-x'] }
     ]);
 
