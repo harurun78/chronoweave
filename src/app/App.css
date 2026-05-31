@@ -417,6 +417,15 @@ th {
   background: var(--color-memory-wave);
 }
 
+.memory-core-list {
+  margin-top: var(--space-5);
+}
+
+.memory-core-list ul {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-6);
+}
+
 .analysis-list,
 .server-summary {
   display: grid;

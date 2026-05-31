@@ -1,14 +1,22 @@
-import type { AnalysisSnapshot } from '../model/project';
+import type { AnalysisSnapshot, DomainAnalysis } from '../model/project';
 import { messages } from '../i18n/messages.en';
 
 interface MemoryPanelProps {
   analysisSnapshot: AnalysisSnapshot;
+  activeDomainAnalysis?: DomainAnalysis;
 }
 
-export function MemoryPanel({ analysisSnapshot }: MemoryPanelProps) {
+export function MemoryPanel({
+  analysisSnapshot,
+  activeDomainAnalysis
+}: MemoryPanelProps) {
   const profile = analysisSnapshot.memory_profile;
   const maxBytes = Math.max(profile.capacity_bytes ?? 0, profile.peak_bytes, 1);
   const bars = profile.series.slice(0, 24);
+  const coreSeries =
+    activeDomainAnalysis?.cores.filter(
+      (core) => core.stack_occupancy_series !== undefined
+    ) ?? [];
 
   return (
     <article className="panel metric-panel">
@@ -28,6 +36,21 @@ export function MemoryPanel({ analysisSnapshot }: MemoryPanelProps) {
       <strong>{profile.peak_bytes} bytes peak</strong>
       {profile.capacity_bytes !== undefined ? (
         <p>{profile.capacity_bytes} bytes capacity</p>
+      ) : null}
+      {coreSeries.length > 0 ? (
+        <div className="memory-core-list">
+          <p className="eyebrow">Per-core occupancy</p>
+          <ul>
+            {coreSeries.map((core) => (
+              <li
+                key={core.core_index}
+                data-testid={`memory-core-series-${core.core_index}`}
+              >
+                Core {core.core_index}: {core.stack_peak_bytes ?? 0} bytes peak
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </article>
   );
