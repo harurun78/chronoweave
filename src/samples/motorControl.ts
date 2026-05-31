@@ -1,8 +1,17 @@
+import { DEFAULT_DOMAIN_ID } from '../model/project';
 import type {
+  Domain,
   NormalizedProjectFile,
   ProjectState,
   TaskModel
 } from '../model/project';
+
+const DEFAULT_RTOS_DOMAIN: Domain = {
+  id: DEFAULT_DOMAIN_ID,
+  name: 'Default RTOS',
+  kind: 'rtos',
+  core_count: 1
+};
 
 export const motorControlOneAxisProject: NormalizedProjectFile = {
   version: '0.1',
@@ -23,7 +32,8 @@ export const motorControlOneAxisProject: NormalizedProjectFile = {
       wcet_ms: 0.05,
       deadline_ms: 1,
       priority_mode: 'auto',
-      stack: 'low'
+      stack: 'low',
+      domain_id: DEFAULT_DOMAIN_ID
     },
     {
       id: 'motorctrl-x',
@@ -32,7 +42,8 @@ export const motorControlOneAxisProject: NormalizedProjectFile = {
       wcet_ms: 3,
       deadline_ms: 10,
       priority_mode: 'auto',
-      stack: 'mid'
+      stack: 'mid',
+      domain_id: DEFAULT_DOMAIN_ID
     },
     {
       id: 'sensor-fusion',
@@ -42,10 +53,14 @@ export const motorControlOneAxisProject: NormalizedProjectFile = {
       deadline_ms: 20,
       priority_mode: 'auto',
       stack: 'mid',
+      domain_id: DEFAULT_DOMAIN_ID,
       description: 'IMU + encoder fusion'
     }
   ],
-  aperiodic_tasks: []
+  domains: [DEFAULT_RTOS_DOMAIN],
+  aperiodic_tasks: [],
+  channels: [],
+  stochastic_events: []
 };
 
 export const motorControlWithAperiodicProject: NormalizedProjectFile = {
@@ -58,6 +73,7 @@ export const motorControlWithAperiodicProject: NormalizedProjectFile = {
       wcet_ms: 1.5,
       deadline_ms: 50,
       stack: 'low',
+      domain_id: DEFAULT_DOMAIN_ID,
       description: 'On-demand diagnostic command handling'
     }
   ],
@@ -68,7 +84,8 @@ export const motorControlWithAperiodicProject: NormalizedProjectFile = {
     deadline_ms: 20,
     priority_mode: 'manual',
     manual_priority: 3,
-    stack: 'mid'
+    stack: 'mid',
+    domain_id: DEFAULT_DOMAIN_ID
   },
   codegen: {
     plugin: 'freertos',

@@ -86,9 +86,10 @@ codegen:
       return;
     }
 
-    expect(roundtrip.normalizedProjectFile).toEqual(
-      result.normalizedProjectFile
-    );
+    expect(roundtrip.normalizedProjectFile).toEqual({
+      ...result.normalizedProjectFile,
+      version: '0.3'
+    });
     expect(serialized).not.toContain('selectedTaskId');
   });
 });

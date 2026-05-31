@@ -94,12 +94,17 @@ export function persistentProject(
       ...projectState.global,
       stack_presets: { ...projectState.global.stack_presets }
     },
+    domains: projectState.domains.map((domain) => ({ ...domain })),
     tasks: projectState.tasks.map((task) => ({ ...task })),
     aperiodic_tasks: projectState.aperiodic_tasks.map((task) => ({ ...task })),
     sporadic_server:
       projectState.sporadic_server === undefined
         ? undefined
         : { ...projectState.sporadic_server },
+    channels: projectState.channels.map((channel) => ({ ...channel })),
+    stochastic_events: projectState.stochastic_events.map((event) => ({
+      ...event
+    })),
     codegen:
       projectState.codegen === undefined
         ? undefined
