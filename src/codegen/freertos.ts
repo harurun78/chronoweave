@@ -32,7 +32,7 @@ export function generateFreeRtosFiles(
   const taskStubs = projectState.tasks
     .map((task) => {
       const symbol = sanitizeSymbol(task.name);
-      return `static void ${symbol}Task(void *argument)\n{\n  (void)argument;\n  const TickType_t periodTicks = pdMS_TO_TICKS(${task.period_ms});\n  TickType_t lastWakeTime = xTaskGetTickCount();\n\n  for (;;) {\n    /* TODO: implement ${task.name}. WCET budget: ${task.wcet_ms} ms. */\n    vTaskDelayUntil(&lastWakeTime, periodTicks);\n  }\n}`;
+      return `static void ${symbol}Task(void *argument)\n{\n  (void)argument;\n  const TickType_t periodTicks = pdMS_TO_TICKS(${task.period_ms});\n  TickType_t lastWakeTime = xTaskGetTickCount();\n\n  for (;;) {\n    /* USER_BODY: implement ${task.name}. WCET budget: ${task.wcet_ms} ms. */\n    vTaskDelayUntil(&lastWakeTime, periodTicks);\n  }\n}`;
     })
     .join('\n\n');
   const serverSection = createSporadicServerSection(projectState);
@@ -76,7 +76,7 @@ function createSporadicServerSection(projectState: ProjectState): {
   const dispatchCases = projectState.aperiodic_tasks
     .map(
       (task) =>
-        `    /* TODO: dispatch ${task.name}. WCET budget: ${task.wcet_ms} ms. */`
+        `    /* USER_BODY: dispatch ${task.name}. WCET budget: ${task.wcet_ms} ms. */`
     )
     .join('\n');
 
