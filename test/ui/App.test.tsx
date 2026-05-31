@@ -150,6 +150,62 @@ tasks:
     ).toBeInTheDocument();
   });
 
+  it('renders one Gantt row per core and shows per-core stack occupancy', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    const multicoreProject = `version: '0.3'
+global:
+  tick_ms: 1
+  stack_presets:
+    low: 512
+    mid: 2048
+    high: 4096
+  ram_capacity: 65536
+domains:
+  - id: rtos
+    name: RTOS
+    kind: rtos
+    core_count: 2
+  - id: linux
+    name: Linux
+    kind: linux
+    core_count: 1
+tasks:
+  - id: task_core0
+    name: TaskCore0
+    period_ms: 10
+    wcet_ms: 2
+    stack: low
+    domain_id: rtos
+    core_index: 0
+  - id: task_core1
+    name: TaskCore1
+    period_ms: 10
+    wcet_ms: 3
+    stack: mid
+    domain_id: rtos
+    core_index: 1
+`;
+    const file = new File([multicoreProject], 'multicore.yaml', {
+      type: 'application/x-yaml'
+    });
+    Object.defineProperty(file, 'text', {
+      value: async () => multicoreProject
+    });
+
+    await user.upload(screen.getByTestId('project-file-input'), file);
+
+    expect(await screen.findByTestId('gantt-core-row-0')).toBeInTheDocument();
+    expect(screen.getByTestId('gantt-core-row-1')).toBeInTheDocument();
+    expect(screen.getByTestId('memory-core-series-0')).toHaveTextContent(
+      'Core 0: 512 bytes peak'
+    );
+    expect(screen.getByTestId('memory-core-series-1')).toHaveTextContent(
+      'Core 1: 2048 bytes peak'
+    );
+  });
+
   it('focuses the related task when a Problem is clicked', async () => {
     const user = userEvent.setup();
     renderApp();

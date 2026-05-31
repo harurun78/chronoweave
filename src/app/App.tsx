@@ -87,6 +87,9 @@ export function App() {
   const visibleAnalyses = analysisSnapshot.tasks.filter((analysis) =>
     visibleTaskIds.has(analysis.task_id)
   );
+  const activeDomainAnalysis = analysisSnapshot.domains?.find(
+    (domain) => domain.domain_id === activeDomainId
+  );
   const selectedTask =
     visibleTasks.find((task) => task.id === projectState.selectedTaskId) ??
     visibleTasks[0];
@@ -381,10 +384,11 @@ export function App() {
               </span>
             </div>
             <GanttChart
-              analyses={analysisSnapshot.tasks}
+              analyses={visibleAnalyses}
+              cores={activeDomainAnalysis?.cores}
               lcmMs={analysisSnapshot.lcm_ms}
               selectedTaskId={selectedTask?.id}
-              tasks={projectState.tasks}
+              tasks={visibleTasks}
               onSelectTask={selectTask}
               onUpdateTask={updateTask}
             />
@@ -395,7 +399,10 @@ export function App() {
             aria-label={messages.workspace.derivedLabel}
           >
             <BufferPanel analyses={visibleAnalyses} tasks={visibleTasks} />
-            <MemoryPanel analysisSnapshot={analysisSnapshot} />
+            <MemoryPanel
+              analysisSnapshot={analysisSnapshot}
+              activeDomainAnalysis={activeDomainAnalysis}
+            />
             <PhaseTwoPanel
               analysisSnapshot={analysisSnapshot}
               projectState={projectState}

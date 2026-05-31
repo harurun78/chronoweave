@@ -1,7 +1,11 @@
 import { useDrag } from '@use-gesture/react';
 import { useRef } from 'react';
 
-import type { NormalizedTaskModel, TaskAnalysis } from '../model/project';
+import type {
+  CoreAnalysis,
+  NormalizedTaskModel,
+  TaskAnalysis
+} from '../model/project';
 import { GANTT_WIDTH, ROW_HEIGHT } from './ganttLayout';
 import { messages } from '../i18n/messages.en';
 
@@ -10,6 +14,7 @@ const WCET_STEP_MS = 0.05;
 
 interface GanttChartProps {
   analyses: TaskAnalysis[];
+  cores?: CoreAnalysis[];
   lcmMs: number;
   selectedTaskId?: string;
   tasks: NormalizedTaskModel[];
@@ -19,13 +24,31 @@ interface GanttChartProps {
 
 export function GanttChart({
   analyses,
+  cores,
   lcmMs,
   selectedTaskId,
   tasks,
   onSelectTask,
   onUpdateTask
 }: GanttChartProps) {
-  const chartHeight = Math.max(ROW_HEIGHT * tasks.length, ROW_HEIGHT);
+  const tasksById = new Map(tasks.map((task) => [task.id, task] as const));
+  const rows =
+    cores !== undefined && cores.length > 0
+      ? cores.map((core) => ({
+          id: `core-${core.core_index}`,
+          label: `Core ${core.core_index}`,
+          tasks: core.task_ids
+            .map((taskId) => tasksById.get(taskId))
+            .filter((task): task is NormalizedTaskModel => task !== undefined),
+          testId: `gantt-core-row-${core.core_index}`
+        }))
+      : tasks.map((task) => ({
+          id: task.id,
+          label: task.name,
+          tasks: [task],
+          testId: `gantt-task-row-${task.id}`
+        }));
+  const chartHeight = Math.max(ROW_HEIGHT * rows.length, ROW_HEIGHT);
   const safeLcmMs = Math.max(lcmMs, 1);
 
   return (
@@ -35,14 +58,16 @@ export function GanttChart({
       aria-label={messages.panels.gantt.ariaTimeline}
       viewBox={`0 0 ${GANTT_WIDTH} ${chartHeight}`}
     >
-      {tasks.map((task, taskIndex) => (
+      {rows.map((row, rowIndex) => (
         <GanttTaskRow
-          analysis={analyses.find((candidate) => candidate.task_id === task.id)}
-          key={task.id}
+          analyses={analyses}
+          key={row.id}
+          label={row.label}
           lcmMs={safeLcmMs}
-          selected={task.id === selectedTaskId}
-          task={task}
-          taskIndex={taskIndex}
+          selectedTaskId={selectedTaskId}
+          tasks={row.tasks}
+          rowIndex={rowIndex}
+          testId={row.testId}
           onSelectTask={onSelectTask}
           onUpdateTask={onUpdateTask}
         />
@@ -52,29 +77,100 @@ export function GanttChart({
 }
 
 interface GanttTaskRowProps {
-  analysis?: TaskAnalysis;
+  analyses: TaskAnalysis[];
+  label: string;
   lcmMs: number;
-  selected: boolean;
-  task: NormalizedTaskModel;
-  taskIndex: number;
+  selectedTaskId?: string;
+  tasks: NormalizedTaskModel[];
+  rowIndex: number;
+  testId: string;
   onSelectTask: (taskId: string) => void;
   onUpdateTask: (taskId: string, patch: Partial<NormalizedTaskModel>) => void;
 }
 
 function GanttTaskRow({
-  analysis,
+  analyses,
+  label,
   lcmMs,
-  selected,
-  task,
-  taskIndex,
+  selectedTaskId,
+  tasks,
+  rowIndex,
+  testId,
   onSelectTask,
   onUpdateTask
 }: GanttTaskRowProps) {
-  const dragStartWcet = useRef(task.wcet_ms);
+  const dragStartWcet = useRef(0);
   const pixelsPerMs = GANTT_WIDTH / lcmMs;
-  const y = taskIndex * ROW_HEIGHT + 10;
+  const y = rowIndex * ROW_HEIGHT + 10;
+
+  return (
+    <g role="row" data-testid={testId}>
+      <text className="gantt-label" x="0" y={y + 17}>
+        {label}
+      </text>
+      <rect
+        className="gantt-track"
+        x="128"
+        y={y}
+        width={GANTT_WIDTH - 140}
+        height="22"
+      />
+      {tasks.map((task, taskIndex) => (
+        <GanttTaskBar
+          analysis={analyses.find((candidate) => candidate.task_id === task.id)}
+          key={task.id}
+          lcmMs={lcmMs}
+          pixelsPerMs={pixelsPerMs}
+          rowY={y}
+          selected={task.id === selectedTaskId}
+          showHandle={tasks.length === 1 && taskIndex === 0}
+          task={task}
+          taskIndex={taskIndex}
+          taskLaneCount={tasks.length}
+          dragStartWcet={dragStartWcet}
+          onSelectTask={onSelectTask}
+          onUpdateTask={onUpdateTask}
+        />
+      ))}
+    </g>
+  );
+}
+
+interface GanttTaskBarProps {
+  analysis?: TaskAnalysis;
+  lcmMs: number;
+  pixelsPerMs: number;
+  rowY: number;
+  selected: boolean;
+  showHandle: boolean;
+  task: NormalizedTaskModel;
+  taskIndex: number;
+  taskLaneCount: number;
+  dragStartWcet: { current: number };
+  onSelectTask: (taskId: string) => void;
+  onUpdateTask: (taskId: string, patch: Partial<NormalizedTaskModel>) => void;
+}
+
+function GanttTaskBar({
+  analysis,
+  lcmMs,
+  pixelsPerMs,
+  rowY,
+  selected,
+  showHandle,
+  task,
+  taskIndex,
+  taskLaneCount,
+  dragStartWcet,
+  onSelectTask,
+  onUpdateTask
+}: GanttTaskBarProps) {
   const periodCount = Math.max(1, Math.floor(lcmMs / task.period_ms));
   const barWidth = Math.max(4, task.wcet_ms * pixelsPerMs);
+  const laneHeight = Math.max(6, 18 / Math.max(taskLaneCount, 1));
+  const barY = rowY + 2 + taskIndex * laneHeight;
+  const barHeight = Math.max(4, laneHeight - 2);
+
   const bind = useDrag(({ first, last, movement: [movementX] }) => {
     if (first) {
       dragStartWcet.current = task.wcet_ms;
@@ -105,16 +201,6 @@ function GanttTaskRow({
 
   return (
     <g onClick={() => onSelectTask(task.id)}>
-      <text className="gantt-label" x="0" y={y + 17}>
-        {task.name}
-      </text>
-      <rect
-        className="gantt-track"
-        x="128"
-        y={y}
-        width={GANTT_WIDTH - 140}
-        height="22"
-      />
       {Array.from({ length: periodCount }, (_, periodIndex) => {
         const x =
           128 + ((periodIndex * task.period_ms) / lcmMs) * (GANTT_WIDTH - 140);
@@ -124,12 +210,12 @@ function GanttTaskRow({
               className={`gantt-bar ${statusClass}`}
               data-testid={`gantt-bar-${task.id}`}
               x={x}
-              y={y + 2}
+              y={barY}
               width={Math.max(4, barWidth * 0.8)}
-              height="18"
+              height={barHeight}
               rx="3"
             />
-            {periodIndex === 0 ? (
+            {periodIndex === 0 && showHandle ? (
               <rect
                 {...bind()}
                 className="gantt-handle"
@@ -158,7 +244,7 @@ function GanttTaskRow({
                   }
                 }}
                 x={x + Math.max(4, barWidth * 0.8) - 4}
-                y={y}
+                y={rowY}
                 width="8"
                 height="22"
                 rx="2"
